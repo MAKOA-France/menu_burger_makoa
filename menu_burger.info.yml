@@ -1,0 +1,5 @@
+name: 'custom menu burger'
+description: 'Provide menu burger'
+core_version_requirement: ^8 || ^9
+package: Custom
+type: module
