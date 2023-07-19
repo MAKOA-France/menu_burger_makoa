@@ -24,7 +24,12 @@ class BurgerBlock  extends BlockBase  {
    */
   public function build() {
 
-
+    $burger_service = \Drupal::service('menu_burger.view_services');
+    $allMeetings = $burger_service->getMeetings();
+    foreach ($allMeetings as $meeting) {
+      $dateMeeting = $meeting->created_id_civicrm_contact_start_date;
+      // dump($dateMeeting);
+    }
 
 
 

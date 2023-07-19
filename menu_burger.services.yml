@@ -1,0 +1,4 @@
+services:
+  menu_burger.view_services:
+    class: Drupal\menu_burger\MenuBurgerService
+
