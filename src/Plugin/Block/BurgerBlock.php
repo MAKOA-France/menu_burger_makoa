@@ -24,19 +24,24 @@ class BurgerBlock  extends BlockBase  {
    */
   public function build() {
 
+    \Drupal::service('civicrm')->initialize();
     $burger_service = \Drupal::service('menu_burger.view_services');
-    $allMeetings = $burger_service->getMeetings();
-    foreach ($allMeetings as $meeting) {
-      $dateMeeting = $meeting->created_id_civicrm_contact_start_date;
-      // dump($dateMeeting);
+    $all_meetings = $burger_service->getAllMeetings();
+    foreach ($all_meetings as $meet) {
+      $formated_date = $burger_service->formatDateWithMonthInLetterAndHours ($meet->event_start_date);
+      $meet->formated_start_date = $formated_date;
+      $linked_group = $burger_service->getLinkedGroupWithEvent ($meet->event_id); 
+      $meet->linked_group = $linked_group;
     }
 
-
+    $all_groups = $burger_service->getAllMyGroup();
 
     return [
       '#theme' => 'menu_burger_block',
       '#cache' => ['max-age' => 0],
       '#content' => [
+        'meeting' => $all_meetings, 
+        'groups' => $all_groups
       ],
     ];
   }

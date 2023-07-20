@@ -14,49 +14,22 @@
             <a class="item-sub-menu-burger" data-toggle="dropdown" data-target="#submenu-burger-reunion" ><i class="fa fa-calendar"></i></a>
              <div id="submenu-burger-reunion" class="dropdown-sub-menu-burger">   
                
-                    <a href="#" class="dropdown-item-burger">
+                {% for key, elm in content.meeting %}
+                    <a href="/civicrm-event/{{ elm.event_id }}" class="dropdown-item-burger">
                     
                         <div class="icon-reunion">
                             <i class="fa fa-calendar"></i>
                         </div>
 
                         <div class="details-reunion">
-                            <span class="title_reunion">Titre long pour une reuinion 1</span>
-                            <span class="date_reunion">07 juillet 2023</span>
+                            <span class="title_reunion">{{ elm.event_title }}</span>
+                            <span class="date_reunion">{{ elm.formated_start_date.day }} {{ elm.formated_start_date.month }} {{ elm.formated_start_date.year }}</span>
                             <span class="separator_reunion"> | </span> 
-                            <span class="hour_reunion">15h</span>
+                            <span class="hour_reunion">{{ elm.formated_start_date.hour }}:{{ elm.formated_start_date.minute }}</span>
                         </div>
                     </a>
-
-                     <a href="#" class="dropdown-item-burger">
-                    
-                        <div class="icon-reunion">
-                            <i class="fa fa-calendar"></i>
-                        </div>
-
-                        <div class="details-reunion">
-                            <span class="title_reunion">Titre long pour une reuinion 2</span>
-                            <span class="date_reunion">07 juillet 2023</span>
-                            <span class="separator_reunion"> | </span> 
-                            <span class="hour_reunion">15h</span>
-                        </div>
-                    </a>
-
-                     <a href="#" class="dropdown-item-burger">
-                    
-                        <div class="icon-reunion">
-                            <i class="fa fa-calendar"></i>
-                        </div>
-
-                        <div class="details-reunion">
-                            <span class="title_reunion">Titre long pour une reuinion 3 on est sur le test</span>
-                            <span class="date_reunion">21 juillet 2023</span>
-                            <span class="separator_reunion"> | </span> 
-                            <span class="hour_reunion">14h35</span>
-                        </div>
-                    </a>
-                    
-                    <a href="#" class="dropdown-item-burger all-my-reunion">Toutes mes réunions</a>
+                {% endfor %} 
+                    <a href="/toutes-mes-reunions" class="dropdown-item-burger all-my-reunion">Toutes mes réunions</a>
                
             </div>
         </span>
@@ -65,19 +38,13 @@
             <a data-toggle="dropdown" data-target="#submenu-burger-commission" class="item-sub-menu-burger"><i class="fa fa-users"></i></a>
                 <div id="submenu-burger-commission" class="dropdown-sub-menu-burger"> 
             
-                    <a href="#" class="dropdown-item-burger">
-                        <i class="fa fa-user icon-comission"></i> Titre long pour une reuinion 
-                    </a>
+                    {% for id, group in content.groups %}
+                        <a href="#" class="dropdown-item-burger">
+                            <i class="fa fa-user icon-comission"></i> {{ group.civicrm_group_civicrm_group_contact_title }} 
+                        </a>
+                    {% endfor %} 
 
-                     <a href="#" class="dropdown-item-burger">
-                        <i class="fa fa-user icon-comission"></i> Titre long pour une reuinion 2
-                    </a>
-
-                     <a href="#" class="dropdown-item-burger">
-                        <i class="fa fa-user icon-comission"></i> Titre long pour une reuinion 3
-                    </a>
-                
-                    <a href="#" class="dropdown-item-burger all-my-commission">Toutes mes commissions</a>
+                    <a href="/tous-mes-groupes" class="dropdown-item-burger all-my-commission">Toutes mes commissions</a>
                 </div>
         </span>
 
@@ -85,7 +52,6 @@
 
              <a data-toggle="dropdown" data-target="#submenu-burger-question" class="item-sub-menu-burger"><i class="fa fa-question-circle"></i></a>
                 <div id="submenu-burger-question" class="dropdown-sub-menu-burger"> 
-            
                     <a href="#" class="dropdown-item-burger">
                         <i class="fa fa-question-circle icon-question"></i> Poser une question
                     </a>
