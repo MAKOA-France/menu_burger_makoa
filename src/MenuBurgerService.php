@@ -3,10 +3,13 @@
 
 namespace Drupal\menu_burger;
 
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Datetime\Entity\DateFormat;
 use Drupal\Core\Session\AccountInterface;
-
+  
+use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\Entity\Vocabulary;
 /**
  * Class PubliciteService
  * @package Drupal\menu_burger\Services
@@ -133,45 +136,118 @@ class MenuBurgerService {
   }
 
   /**
-     * Permet de recuperer tous mes groupes
-     */
-    public function getAllMyGroup () {
-      $query = "SELECT
-          civicrm_group_civicrm_group_contact.id AS civicrm_group_civicrm_group_contact_id,
-          civicrm_group_civicrm_group_contact.title AS civicrm_group_civicrm_group_contact_title,
-          civicrm_group_civicrm_group_contact.frontend_title AS civicrm_group_civicrm_group_contact_frontend_title,
-          civicrm_group_civicrm_group_contact.parents AS civicrm_group_civicrm_group_contact_parents,
-          civicrm_group_civicrm_group_contact.name AS civicrm_group_civicrm_group_contact_name,
-          civicrm_group_civicrm_group_contact.group_type AS civicrm_group_civicrm_group_contact_group_type,
-          MIN(civicrm_contact.id) AS id,
-          MIN(users_field_data_civicrm_uf_match.uid) AS users_field_data_civicrm_uf_match_uid,
-          MIN(civicrm_contact_civicrm_uf_match.id) AS civicrm_contact_civicrm_uf_match_id,
-          MIN(civicrm_group_civicrm_group_contact.id) AS civicrm_group_civicrm_group_contact_id_1
-      FROM
-          civicrm_contact
-          LEFT JOIN civicrm_uf_match civicrm_uf_match ON civicrm_contact.id = civicrm_uf_match.contact_id
-          LEFT JOIN users_field_data users_field_data_civicrm_uf_match ON civicrm_uf_match.uf_id = users_field_data_civicrm_uf_match.uid
-          LEFT JOIN civicrm_uf_match users_field_data_civicrm_uf_match__civicrm_uf_match ON users_field_data_civicrm_uf_match.uid = users_field_data_civicrm_uf_match__civicrm_uf_match.uf_id
-          LEFT JOIN civicrm_contact civicrm_contact_civicrm_uf_match ON users_field_data_civicrm_uf_match__civicrm_uf_match.contact_id = civicrm_contact_civicrm_uf_match.id
-          LEFT JOIN civicrm_group_contact civicrm_group_contact ON civicrm_contact.id = civicrm_group_contact.contact_id AND civicrm_group_contact.status = 'Added'
-          LEFT JOIN civicrm_group civicrm_group_civicrm_group_contact ON civicrm_group_contact.group_id = civicrm_group_civicrm_group_contact.id
-      WHERE
-          (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')
-          AND (civicrm_group_civicrm_group_contact.is_active = '1')
-      GROUP BY
-          civicrm_group_civicrm_group_contact_id,
-          civicrm_group_civicrm_group_contact_title,
-          civicrm_group_civicrm_group_contact_frontend_title,
-          civicrm_group_civicrm_group_contact_parents,
-          civicrm_group_civicrm_group_contact_name,
-          civicrm_group_civicrm_group_contact_group_type
-      ORDER BY
-          civicrm_group_civicrm_group_contact_parents ASC,
-          civicrm_group_civicrm_group_contact_name ASC limit 3
-      "; 
+   * Recupère les termes enfant d'un terme donnée
+   */
+  public function getTaxonomyTermChildByParentName ($term_label) {
+    // The name of the taxonomy vocabulary (change this to your specific vocabulary machine name).
+    $taxonomy_vocabulary = 'rubrique';
 
-      $results =  \Drupal::database()->query($query)->fetchAll();
+    // The label of the term you want to load.
 
-      return $results;
+    // Load the term by its label and the vocabulary it belongs to.
+    $parent_terms = \Drupal::entityTypeManager()
+    ->getStorage('taxonomy_term')
+    ->loadByProperties([
+      'name' => $term_label,
+      'vid' => $taxonomy_vocabulary,
+    ]);
+    
+    $child_term_ids = '';
+
+    if (!empty($parent_terms)) {
+      // Get the first parent term from the result.
+      $parent_term = reset($parent_terms);
+
+      // Get the parent term ID.
+      $parent_term_id = $parent_term->id();
+
+      // Load the child terms using the EntityQuery service.
+      $query = \Drupal::entityQuery('taxonomy_term');
+      $query->condition('vid', $taxonomy_vocabulary);
+      $query->condition('parent', $parent_term_id);
+      $child_term_ids = $query->execute();
+      $terms = Term::loadMultiple($child_term_ids);
+      $all_names = [];
+      foreach ($terms as $term) {
+        $name = $this->getNodeFieldValue ($term, 'name');
+        $all_names[] = $name;
+      }
+      sort($all_names);
+      return $all_names;
+    }
+  }
+
+
+  /**
+   * Check if the current page is a taxonomy term page.
+   */
+  public function is_taxonomy_term_page() {
+    $route_match = \Drupal::service('current_route_match');
+    $route_name = $route_match->getRouteName();
+    return ($route_name === 'entity.taxonomy_term.canonical');
+  }
+
+  
+
+public function getNodeFieldValue ($node, $field) {
+  $value = '';
+  $getValue = $node->get($field)->getValue();
+  if (!empty($getValue)) {
+    if (isset($getValue[0]['target_id'])) { //For entity reference (img / taxonomy ...)
+      $value = $getValue[0]['target_id'];
+    }elseif (isset($getValue[0]['value']))  { //For simple text / date
+      $value = $getValue[0]['value'];
+    }else if(isset($getValue[0]['uri'])) {
+      $value = $getValue[0]['uri'];
+    }else { //other type of field
+
+    }
+  }
+  return $value;
+}
+
+
+
+  /**
+   * Permet de recuperer tous mes groupes
+   */
+  public function getAllMyGroup () {
+    $query = "SELECT
+        civicrm_group_civicrm_group_contact.id AS civicrm_group_civicrm_group_contact_id,
+        civicrm_group_civicrm_group_contact.title AS civicrm_group_civicrm_group_contact_title,
+        civicrm_group_civicrm_group_contact.frontend_title AS civicrm_group_civicrm_group_contact_frontend_title,
+        civicrm_group_civicrm_group_contact.parents AS civicrm_group_civicrm_group_contact_parents,
+        civicrm_group_civicrm_group_contact.name AS civicrm_group_civicrm_group_contact_name,
+        civicrm_group_civicrm_group_contact.group_type AS civicrm_group_civicrm_group_contact_group_type,
+        MIN(civicrm_contact.id) AS id,
+        MIN(users_field_data_civicrm_uf_match.uid) AS users_field_data_civicrm_uf_match_uid,
+        MIN(civicrm_contact_civicrm_uf_match.id) AS civicrm_contact_civicrm_uf_match_id,
+        MIN(civicrm_group_civicrm_group_contact.id) AS civicrm_group_civicrm_group_contact_id_1
+    FROM
+        civicrm_contact
+        LEFT JOIN civicrm_uf_match civicrm_uf_match ON civicrm_contact.id = civicrm_uf_match.contact_id
+        LEFT JOIN users_field_data users_field_data_civicrm_uf_match ON civicrm_uf_match.uf_id = users_field_data_civicrm_uf_match.uid
+        LEFT JOIN civicrm_uf_match users_field_data_civicrm_uf_match__civicrm_uf_match ON users_field_data_civicrm_uf_match.uid = users_field_data_civicrm_uf_match__civicrm_uf_match.uf_id
+        LEFT JOIN civicrm_contact civicrm_contact_civicrm_uf_match ON users_field_data_civicrm_uf_match__civicrm_uf_match.contact_id = civicrm_contact_civicrm_uf_match.id
+        LEFT JOIN civicrm_group_contact civicrm_group_contact ON civicrm_contact.id = civicrm_group_contact.contact_id AND civicrm_group_contact.status = 'Added'
+        LEFT JOIN civicrm_group civicrm_group_civicrm_group_contact ON civicrm_group_contact.group_id = civicrm_group_civicrm_group_contact.id
+    WHERE
+        (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')
+        AND (civicrm_group_civicrm_group_contact.is_active = '1')
+    GROUP BY
+        civicrm_group_civicrm_group_contact_id,
+        civicrm_group_civicrm_group_contact_title,
+        civicrm_group_civicrm_group_contact_frontend_title,
+        civicrm_group_civicrm_group_contact_parents,
+        civicrm_group_civicrm_group_contact_name,
+        civicrm_group_civicrm_group_contact_group_type
+    ORDER BY
+        civicrm_group_civicrm_group_contact_parents ASC,
+        civicrm_group_civicrm_group_contact_name ASC limit 3
+    "; 
+
+    $results =  \Drupal::database()->query($query)->fetchAll();
+
+    return $results;
   }
 }

@@ -16,3 +16,26 @@ function menu_burger_theme($existing, $type, $theme, $path)
         ]
     ];
 }
+
+
+
+  /**
+ * Implements hook_preprocess_HOOK() for breadcrumb templates.
+ */
+function  menu_burger_preprocess_breadcrumb(&$variables) {
+  $burger_service = \Drupal::service('menu_burger.view_services');
+  $is_taxo_page = $burger_service->is_taxonomy_term_page();
+  if($is_taxo_page) {
+    $all_child = [];
+    $breadcrumbs = $variables['breadcrumb'];
+    foreach ($breadcrumbs as  $key => $each_breadcrumb) {
+      $term_name = str_replace(' > ', '', $each_breadcrumb['text']);
+      if ($term_name != 'Accueil') {
+        
+        $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);
+        $variables['breadcrumb'][$key]['submenu'] = $all_child;
+      }
+    }
+  }
+}
+  
