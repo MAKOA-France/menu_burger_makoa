@@ -66,7 +66,7 @@
                 <div id="submenu-burger-commission" class="dropdown-sub-menu-burger"> 
             
                     {% for id, group in content.groups %}
-                        <a href="#" class="dropdown-item-burger">
+                        <a href="/civicrm-group/{{ group.civicrm_group_civicrm_group_contact_id }}" class="dropdown-item-burger">
                             <i class="fa fa-user icon-comission"></i> {{ group.civicrm_group_civicrm_group_contact_title }} 
                         </a>
                     {% endfor %} 

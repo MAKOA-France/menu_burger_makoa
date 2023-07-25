@@ -206,6 +206,29 @@ public function getNodeFieldValue ($node, $field) {
   return $value;
 }
 
+/**
+ * il y a à un moment duplication du accueil dans le fil d'ariane
+ */
+public function disableDuplicateHome (&$vars) {
+  // La valeur à rechercher
+  $valueToFind = "/accueil-0";
+
+  // Variable pour indiquer si la valeur est trouvée
+  $found = false;
+
+  // Parcourir le tableau pour vérifier si la valeur est présente
+  foreach ($vars['breadcrumb'] as $item) {
+      if ($item['url'] === $valueToFind) {
+          $found = true;
+          break;
+      }
+  }
+
+  if ($found) {
+    unset($vars['breadcrumb'][0]);
+  }
+}
+
 
 
   /**

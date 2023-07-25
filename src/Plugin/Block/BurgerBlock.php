@@ -80,7 +80,7 @@ class BurgerBlock  extends BlockBase  {
               foreach ($firs_elem as $second_key => $second_elem) {
                 /* if (count($second_elem)< 2) { */
                   if (!is_int($second_key) && $second_key != 'link_menus') {
-                    $html .= '<li class="menu-item menu-item--collapsed"><a href="#">' . $second_key . '</a>';
+                    $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $second_elem['link_menus'][0] . '">' . $second_key . '</a>';
                   }
                 /* } *//* else {
                   $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $second_key . '<span class="switch-collapsible"></span></a>
@@ -202,6 +202,9 @@ class BurgerBlock  extends BlockBase  {
     return $submenus;
   }
 
+  /**
+   * Retourne un array contenant l'architecture du menu burger
+   */
   private function getAllMenuHierarchy ($tree, $manipulators) {
     $menu_tree_service = \Drupal::service('menu.link_tree');
     $tree = $menu_tree_service->transform($tree, $manipulators);
@@ -225,6 +228,7 @@ class BurgerBlock  extends BlockBase  {
                 foreach ($second_level->subtree as $third_level) {
                   $isEnabled_third_level = $third_level->link->getPluginDefinition()['enabled'];
                   if ($isEnabled_third_level) {
+                    $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][$third_level->link->getTitle()]['link_menus'][] = $this->getUrlC($third_level->link->getPluginId());
                     $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][$third_level->link->getTitle()][] = $third_level->link->getTitle();
                   }
                 }
