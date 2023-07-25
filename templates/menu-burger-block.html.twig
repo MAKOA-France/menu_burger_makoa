@@ -8,6 +8,33 @@
         <i class="fa fa-times"></i>
     </span>
 
+   {#   <ul class="dropdown menu">
+        {% for main_menu in content.main_menus %}
+            {% if main_menu is not iterable %}
+                <li class="menu-item menu-item--collapsed"><a href="#"> {{ main_menu }} </a></li>
+            {% else %}
+                <ul>
+                {% for second_menu in main_menu %}
+                    {% if second_menu is not iterable %}
+                        <li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#"> {{ second_menu }}</a> </li>
+                    {% else %}
+                    <ul>
+                        {% for third_niveau in second_menu %}
+                            {% if third_niveau is not iterable %}
+                                <li><a href="#"> {{ third_niveau }} </a></li>
+                            {% endif %}
+                            {% endfor %}
+                    </ul>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            {% endif %}
+
+        {% endfor %}
+    </ul>  #}
+<nav role="navigation" id="block-menuprincipal" class="block-menu block-taxonomymenu block-hierarchical-taxonomy-menu navigation menu--menu-principal">
+    {{ content.html_menu }}
+</nav>
     <div class="content-sub-menu-burger">
 
         <span class="menu-reunion" >

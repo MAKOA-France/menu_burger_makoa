@@ -6,6 +6,12 @@ use Drupal\node\Entity\Node;
 use \Drupal\node\NodeInterface;
 use Drupal\Core\Block\BlockBase;
 use Drupal\media\Entity\Media;
+
+
+use Drupal\Core\Menu\MenuLinkTreeInterface;
+use Drupal\Core\Menu\MenuTreeParameters;
+
+
 /**
  * Provides a 'Menu burger ' block.
  *
@@ -16,7 +22,6 @@ use Drupal\media\Entity\Media;
  * )
  */
 class BurgerBlock  extends BlockBase  {
-
 
 
   /**
@@ -34,6 +39,69 @@ class BurgerBlock  extends BlockBase  {
       $meet->linked_group = $linked_group;
     }
 
+
+
+
+     // Change 'menu-principal' to the machine name of the menu you want to display.
+    $menu_name = 'menu-principal';
+    $depth = 3;
+
+    $menuLinkTree = \Drupal::service('menu.link_tree');
+    $parameters = new MenuTreeParameters();
+    $parameters->setMaxDepth($depth);
+    $tree = $menuLinkTree->load($menu_name, $parameters);
+    $menu_tree_service = \Drupal::service('menu.link_tree');
+
+    // Optionally, you can transform the tree into a renderable array.
+    $manipulators = [
+      ['callable' => 'menu.default_tree_manipulators:checkAccess'],
+      ['callable' => 'menu.default_tree_manipulators:generateIndexAndSort'],
+    ];
+    $tree = $menu_tree_service->transform($tree, $manipulators);
+    
+    $all_menus = $this->getAllMenuHierarchy ($tree, $manipulators);
+
+    $html = '<ul class="dropdown menu">';
+    foreach ($all_menus as $key => $men)  {
+      if (count($men)< 3) {
+         if (!is_int($key)) {
+           $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $men['link_menus'][0] . '">' . $key . '</a></li>';
+          }
+      }else {
+          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $key . '<span class="switch-collapsible"></span></a>
+          <ul class="submenu is-dropdown-submenu first-sub vertical">';
+          foreach ($men as $first_key => $firs_elem) {
+            if (count($firs_elem)< 3) {
+              if (!is_int($first_key) && $first_key != 'link_menus') {
+                $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $firs_elem['link_menus'][0] . '">' . $first_key . '</a></li>';
+              }
+            }else {
+              $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $first_key . '<span class="switch-collapsible"></span></a><ul class="submenu is-dropdown-submenu second-sub vertical">';
+              foreach ($firs_elem as $second_key => $second_elem) {
+                /* if (count($second_elem)< 2) { */
+                  if (!is_int($second_key) && $second_key != 'link_menus') {
+                    $html .= '<li class="menu-item menu-item--collapsed"><a href="#">' . $second_key . '</a>';
+                  }
+                /* } *//* else {
+                  $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $second_key . '<span class="switch-collapsible"></span></a>
+                  <ul class="submenu is-dropdown-submenu third-sub vertical">';
+                  foreach ($second_elem as $third_key => $third_elem) {
+                    $html .= '<li class="menu-item menu-item--collapsed"><a href="#">' . $third_key . '</a><ul class="submenu is-dropdown-submenu first-sub vertical">';
+                    //todo if there is another 
+                  }
+                } */
+              }
+              $html .= '</ul></li>';
+            }
+          }
+          $html .= '</ul></li>';
+      }
+    }
+    $html .= '</ul>';
+
+
+    $markup = ['#markup' => $html];
+    $renderable_menu = \Drupal::service('renderer')->render($markup);
     $all_groups = $burger_service->getAllMyGroup();
 
     return [
@@ -41,9 +109,133 @@ class BurgerBlock  extends BlockBase  {
       '#cache' => ['max-age' => 0],
       '#content' => [
         'meeting' => $all_meetings, 
-        'groups' => $all_groups
+        'groups' => $all_groups,
+        'main_menus' => $all_menus,
+        'html_menu' => $renderable_menu
       ],
     ];
+    
   }
+
+
+  public function getUrlC ($mel) {
+    $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+  
+    // Load the menu link by its UUID.
+    $menu_link = $menu_link_manager->createInstance($mel);
+    
+    if ($menu_link) {
+      // Get the URL object for the menu item.
+      $url_object = $menu_link->getUrlObject();
+
+      // Convert the URL object to a string.
+      $link_url = $url_object->toString();
+
+      return $link_url;
+    }
+  }
+
+    /**
+   * Helper function to process the menu tree and get the submenus.
+   *
+   * @param array $tree
+   *   The menu tree.
+   *
+   * @return array
+   *   An array containing the menu items and submenus.
+   */
+  protected function processMenuTree($tree) {
+    $submenus = [];
+
+    foreach ($tree as $item) {
+      // Add the item to the submenus array.
+      $submenus[] = [
+        'title' => $item->link->getTitle(),
+        'url' => $item->link->getUrlObject()->toString(),
+      ];
+
+      // Check if the item has children (submenus).
+      if ($item->hasChildren) {
+        // Recursively process the child items.
+        $submenus = array_merge($submenus, $this->processMenuTree($item->subtree));
+      }
+    }
+
+    return $submenus;
+  }
+
+
+  /**
+   * Function to load the menu and its submenus by name.
+   */
+  public function load_menu_and_submenus($menu_name) {
+    $menu_tree = \Drupal::service('menu.link_tree');
+    $parameters = new \Drupal\Core\Menu\MenuTreeParameters();
+    $tree = $menu_tree->load($menu_name, $parameters);
+
+    // Process the menu tree to get the submenus.
+    $submenus = $this->process_menu_tree($tree);
+
+    return $submenus;
+  }
+
+  /**
+   * Helper function to process the menu tree and get the submenus.
+   */
+  public function process_menu_tree($tree) {
+    $submenus = [];
+
+    foreach ($tree as $item) {
+      // Add the item to the submenus array.
+      $submenus[] = [
+        'title' => $item->link->getTitle(),
+        'url' => $item->link->getUrlObject()->toString(),
+      ];
+
+      // Check if the item has children (submenus).
+      if ($item->hasChildren) {
+        // Recursively process the child items.
+        $submenus = array_merge($submenus, process_menu_tree($item->subtree));
+      }
+    }
+
+    return $submenus;
+  }
+
+  private function getAllMenuHierarchy ($tree, $manipulators) {
+    $menu_tree_service = \Drupal::service('menu.link_tree');
+    $tree = $menu_tree_service->transform($tree, $manipulators);
+    
+    $all_menus = [];
+
+    foreach ($tree as $first_level ) {
+      $isEnabled_first_level = $first_level->link->getPluginDefinition()['enabled'];//si le menu est actif
+      if ( $isEnabled_first_level) {
+        // $lien = $this->getUrlC($first_level->link->getPluginId()
+        $all_menus[$first_level->link->getTitle()][] = $first_level->link->getTitle();
+        $all_menus[$first_level->link->getTitle()]['link_menus'][] = $this->getUrlC($first_level->link->getPluginId());
+        if ($first_level->subtree) {
+          foreach ($first_level->subtree as $second_level) {
+            // dump($second_level->link, $second_level);
+            $isEnabled_second_level = $second_level->link->getPluginDefinition()['enabled'];
+            if ($isEnabled_second_level) {
+              $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][] = $second_level->link->getTitle();
+              $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()]['link_menus'][] = $this->getUrlC($second_level->link->getPluginId());
+              if ($second_level->subtree) {
+                foreach ($second_level->subtree as $third_level) {
+                  $isEnabled_third_level = $third_level->link->getPluginDefinition()['enabled'];
+                  if ($isEnabled_third_level) {
+                    $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][$third_level->link->getTitle()][] = $third_level->link->getTitle();
+                  }
+                }
+              }
+            } 
+          }
+        }
+      } 
+    }
+    return $all_menus;
+  }
+
 
 }
