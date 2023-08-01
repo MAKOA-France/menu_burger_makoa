@@ -29,9 +29,20 @@ class BurgerBlock  extends BlockBase  {
    */
   public function build() {
 
+    // Get the current user.
+    $current_user = \Drupal::currentUser();
+    $user_id = $current_user->id();
+
+    // Load CiviCRM API
     \Drupal::service('civicrm')->initialize();
     $burger_service = \Drupal::service('menu_burger.view_services');
-    $all_meetings = $burger_service->getAllMeetings();
+    // Load the user account entity to access the email field.
+    $account = \Drupal\user\Entity\User::load($user_id);
+      
+    // Get the user's email address.
+    $email = $account->getEmail();
+    $cid = $burger_service->getContactIdByEmail($email);
+    $all_meetings = $burger_service->getAllMeetings($cid);
     foreach ($all_meetings as $meet) {
       $formated_date = $burger_service->formatDateWithMonthInLetterAndHours ($meet->event_start_date);
       $meet->formated_start_date = $formated_date;
@@ -40,7 +51,7 @@ class BurgerBlock  extends BlockBase  {
     }
 
 
-
+    $link_ask_question = '/form/poser-une-question?cid2=' . $user_id;
 
      // Change 'menu-principal' to the machine name of the menu you want to display.
     $menu_name = 'menu-principal';
@@ -111,7 +122,8 @@ class BurgerBlock  extends BlockBase  {
         'meeting' => $all_meetings, 
         'groups' => $all_groups,
         'main_menus' => $all_menus,
-        'html_menu' => $renderable_menu
+        'html_menu' => $renderable_menu,
+        'link_ask_question' => $link_ask_question
       ],
     ];
     
@@ -238,6 +250,7 @@ class BurgerBlock  extends BlockBase  {
         }
       } 
     }
+    // dump($all_menus);
     return $all_menus;
   }
 
