@@ -252,7 +252,7 @@ public function disableDuplicateHome (&$vars) {
   /**
    * Permet de recuperer tous mes groupes
    */
-  public function getAllMyGroup () {
+  public function getAllMyGroup ($cid) {
     $query = "SELECT
         civicrm_group_civicrm_group_contact.id AS civicrm_group_civicrm_group_contact_id,
         civicrm_group_civicrm_group_contact.title AS civicrm_group_civicrm_group_contact_title,
@@ -275,6 +275,7 @@ public function disableDuplicateHome (&$vars) {
     WHERE
         (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')
         AND (civicrm_group_civicrm_group_contact.is_active = '1')
+        AND civicrm_contact.id = $cid
     GROUP BY
         civicrm_group_civicrm_group_contact_id,
         civicrm_group_civicrm_group_contact_title,

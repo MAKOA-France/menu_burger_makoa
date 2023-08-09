@@ -25,13 +25,23 @@ function menu_burger_theme($existing, $type, $theme, $path)
 function  menu_burger_preprocess_breadcrumb(&$variables) {
   $burger_service = \Drupal::service('menu_burger.view_services');
   $is_taxo_page = $burger_service->is_taxonomy_term_page();
-  
+
 
   $burger_service->disableDuplicateHome($variables);
+
+  // Check if the user is authenticated (logged in).
+  $currentUser = \Drupal::currentUser();
+  $isUserLoggedIn = $currentUser->isAuthenticated();
+
+  // Disable breadcrumb for logged out users.
+  if (!$isUserLoggedIn) {
+    $variables['breadcrumb'] = [];
+  }
 
   if($is_taxo_page) {
     $all_child = [];
     $breadcrumbs = $variables['breadcrumb'];
+    $variables['breadcrumb'][0]['text'] = str_replace('> Accueil', 'Accueil', $breadcrumbs[0]['text']);
     foreach ($breadcrumbs as  $key => $each_breadcrumb) {
       $term_name = str_replace(' > ', '', $each_breadcrumb['text']);
       $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);

@@ -38,7 +38,6 @@ class BurgerBlock  extends BlockBase  {
     $burger_service = \Drupal::service('menu_burger.view_services');
     // Load the user account entity to access the email field.
     $account = \Drupal\user\Entity\User::load($user_id);
-      
     // Get the user's email address.
     $email = $account->getEmail();
     $cid = $burger_service->getContactIdByEmail($email);
@@ -113,7 +112,7 @@ class BurgerBlock  extends BlockBase  {
 
     $markup = ['#markup' => $html];
     $renderable_menu = \Drupal::service('renderer')->render($markup);
-    $all_groups = $burger_service->getAllMyGroup();
+    $all_groups = $burger_service->getAllMyGroup($cid);
 
     return [
       '#theme' => 'menu_burger_block',
@@ -250,7 +249,6 @@ class BurgerBlock  extends BlockBase  {
         }
       } 
     }
-    // dump($all_menus);
     return $all_menus;
   }
 
