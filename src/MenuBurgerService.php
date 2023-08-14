@@ -152,13 +152,15 @@ class MenuBurgerService {
 
     // The label of the term you want to load.
 
+    $property_array = ['vid' => $taxonomy_vocabulary];
+    if ($term_label) {
+      $property_array['name'] =  $term_label;
+    }
+      
     // Load the term by its label and the vocabulary it belongs to.
     $parent_terms = \Drupal::entityTypeManager()
     ->getStorage('taxonomy_term')
-    ->loadByProperties([
-      'name' => $term_label,
-      'vid' => $taxonomy_vocabulary,
-    ]);
+    ->loadByProperties($property_array);
     
     $child_term_ids = '';
 
@@ -291,5 +293,63 @@ public function disableDuplicateHome (&$vars) {
     $results =  \Drupal::database()->query($query)->fetchAll();
 
     return $results;
+  }
+
+    public function getAllTaxoWithHierarchy () {
+    $burger_service = \Drupal::service('menu_burger.view_services');
+    $all_parents_term = $burger_service->getTaxonomyTermChildByParentName(null);
+    asort($all_parents_term);
+    
+    foreach ($all_parents_term as $key => $value) {
+      $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value);
+      $all_parents_term[$key] = [$value => $first_child_term];
+    }
+    foreach ($all_parents_term as $first_key_level => $first_level_value) {
+      foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
+        $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value);
+        
+        
+        if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
+          $all_parents_term[$first_key_level][$second_key_level] = $second_child_term;
+          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value => $second_child_term];
+        }
+      }
+    } 
+    //$all_parents_term;
+
+    $html = '<ul class="dropdown menu">';
+    
+    foreach($all_parents_term as $item => $menu) {
+      if (strpos($item, 'no-link') ===  false) {
+        $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
+        // dump(array_keys($menu)[0]);
+      }else {
+          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
+        <ul class="submenu is-dropdown-submenu first-sub vertical">';
+        foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
+          if (strpos($key, 'no-link') ===  false) {
+            $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
+          }else {
+            $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
+            <ul class="submenu is-dropdown-submenu first-sub vertical">';  
+            // dump($submenu, array_keys($submenu)[0]);
+            foreach($submenu[array_keys($submenu)[0]] as $k => $v) {
+              // dump($v);
+              if (strpos($k, 'no-link') ===  false) {
+              }
+              $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $k . '">' . $v . '</a></li>';
+            }
+            $html .= '</ul></li>';
+
+          }
+        }
+        $html .= '</ul></li>';
+      } 
+  }
+  $html .= '</ul>' ;
+
+  return $html;
+
+    
   }
 }

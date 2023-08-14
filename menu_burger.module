@@ -41,13 +41,54 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
   if($is_taxo_page) {
     $all_child = [];
     $breadcrumbs = $variables['breadcrumb'];
+    $count = count($variables['breadcrumb']) -1;
+    // Move the internal pointer to the last element
+    end($variables['breadcrumb']);
+
+    // Get the key of the last element
+    $lastKey = key($variables['breadcrumb']);
+    foreach ($variables['breadcrumb'] as $key => $breadcrumb) {
+      // dump([$count, $key]);
+      if ($key != $lastKey) {// pour le fil d'ariane, juste desactiver le lien pour chaque element sauf le dernier; exemple Accueil > Cotations > Cotation Hebdo....
+        //  je desactive le lien sur accueil et Cotations 
+        $variables['breadcrumb'][$key]['url'] = NULL;
+      }
+      // dump([$count, $key]);
+    }
+    // dump($variables['breadcrumb']);
     $variables['breadcrumb'][0]['text'] = str_replace('> Accueil', 'Accueil', $breadcrumbs[0]['text']);
     foreach ($breadcrumbs as  $key => $each_breadcrumb) {
       $term_name = str_replace(' > ', '', $each_breadcrumb['text']);
       $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);
-      // dump($all_child);
       $variables['breadcrumb'][$key]['submenu'] = $all_child;
     }
+
+    
+/*     $all_parents_term = $burger_service->getTaxonomyTermChildByParentName(null);
+    foreach ($all_parents_term as $key => $value) {
+      $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value);
+      $link = ['link_menus' => [0 => $key]];
+      $all_parents_term[$value] = [
+        0 => $value,
+        'link_menus' => $key,
+      ];
+
+      $all_parents_term[$value] = array_merge($first_child_term, $all_parents_term[$value]);
+
+    }
+     foreach ($all_parents_term as $first_key_level => $first_level_value) {
+      foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
+        $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value);
+        
+        
+        if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
+          $all_parents_term[$first_key_level][$second_key_level] = $second_child_term;
+          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value => $second_child_term];
+        }
+      }
+    }  
+    dump($all_parents_term, 'two '); */
+    // $burger_service->getAllTaxoWithHierarchy();
   }
 }
   

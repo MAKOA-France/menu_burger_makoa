@@ -88,18 +88,9 @@ class BurgerBlock  extends BlockBase  {
             }else {
               $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $first_key . '<span class="switch-collapsible"></span></a><ul class="submenu is-dropdown-submenu second-sub vertical">';
               foreach ($firs_elem as $second_key => $second_elem) {
-                /* if (count($second_elem)< 2) { */
                   if (!is_int($second_key) && $second_key != 'link_menus') {
                     $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $second_elem['link_menus'][0] . '">' . $second_key . '</a>';
                   }
-                /* } *//* else {
-                  $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $second_key . '<span class="switch-collapsible"></span></a>
-                  <ul class="submenu is-dropdown-submenu third-sub vertical">';
-                  foreach ($second_elem as $third_key => $third_elem) {
-                    $html .= '<li class="menu-item menu-item--collapsed"><a href="#">' . $third_key . '</a><ul class="submenu is-dropdown-submenu first-sub vertical">';
-                    //todo if there is another 
-                  }
-                } */
               }
               $html .= '</ul></li>';
             }
@@ -110,7 +101,8 @@ class BurgerBlock  extends BlockBase  {
     $html .= '</ul>';
 
 
-    $markup = ['#markup' => $html];
+    // $markup = ['#markup' => $html];
+    $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchy()];
     $renderable_menu = \Drupal::service('renderer')->render($markup);
     $all_groups = $burger_service->getAllMyGroup($cid);
 
@@ -249,8 +241,13 @@ class BurgerBlock  extends BlockBase  {
         }
       } 
     }
+
     return $all_menus;
   }
+
+
+
+
 
 
 }
