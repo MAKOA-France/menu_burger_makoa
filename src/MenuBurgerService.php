@@ -178,22 +178,67 @@ class MenuBurgerService {
       $child_term_ids = $query->execute();
       $terms = Term::loadMultiple($child_term_ids);
       $all_names = [];
-      foreach ($terms as $term) {
-        $name = $this->getNodeFieldValue ($term, 'name');
-        $string_url = $term->toUrl()->toString();
-        $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+      
 
-        $children = $term_storage->loadChildren($term->id(), 'rubrique');
-        // dump([$this->getNodeFieldValue ($term, 'name'), $children], ' 555');
-        if (count($children) < 1) {
-          // dump($name);
-          $all_names[$string_url] = $name;
-        }else {
-          $all_names['no-link' . $name] = $name;
+      // Tableau temporaire pour stocker les poids et les indices correspondants
+      $tempArray = [];
+
+      foreach ($terms as $index => $term) {
+        // if (isset($term->values['weight']['x-default'])) {
+          // dump($this->isTermLinkedWithMenu($term->id()), $term->name->value);
+        if($this->isTermLinkedWithMenu($term->id())) {
+          $weight = $this->getNodeFieldValue($term, 'weight');
+          $tempArray[$index] = $weight;
+        }
+        // }
+      }
+
+      // Triez le tableau temporaire par valeurs de poids
+      asort($tempArray);
+      // dump($tempArray);
+
+      foreach ($terms as $term) {
+        if($this->isTermLinkedWithMenu($term->id())) {
+          $name = $this->getNodeFieldValue ($term, 'name');
+          $string_url = $term->toUrl()->toString();
+          $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+
+          $children = $term_storage->loadChildren($term->id(), 'rubrique');
+          // dump([$this->getNodeFieldValue ($term, 'name'), $children], ' 555');
+          if (count($children) < 1) {
+            // dump($name);
+            $all_names[$string_url] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
+            // $all_names[$string_url] = $name;
+          }else {
+            $all_names['no-link' . $name] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
+            // $all_names['no-link' . $name] = $name;
+          }
         }
       }
-      // usort($all_names);
+      // dump($all_names);
+      
+      // Tri du tableau en utilisant la fonction de comparaison
+      uasort($all_names, [$this, 'compareByWeight']);
+      // dump('after', $all_names);
+
       return $all_names;
+    }
+  }
+
+  // Fonction de comparaison personnalisée basée sur le poids
+  private static  function compareByWeight($a, $b) {
+    return $a["weight"] - $b["weight"];
+  }
+
+  private function isTermLinkedWithMenu ($term_id) {
+    $term = \Drupal\taxonomy\Entity\Term::load($term_id);
+
+    // Check if the term entity is valid
+    if ($term) {
+        // Check if there are menu links associated with the term
+        $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+        $menu_links = $menu_link_manager->loadLinksByRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $term_id]);
+        return !empty($menu_links);
     }
   }
 
@@ -298,20 +343,23 @@ public function disableDuplicateHome (&$vars) {
     public function getAllTaxoWithHierarchy () {
     $burger_service = \Drupal::service('menu_burger.view_services');
     $all_parents_term = $burger_service->getTaxonomyTermChildByParentName(null);
-    asort($all_parents_term);
+    // asort($all_parents_term);
     
     foreach ($all_parents_term as $key => $value) {
-      $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value);
-      $all_parents_term[$key] = [$value => $first_child_term];
+      $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value['name']);
+      $all_parents_term[$key] = [$value['name'] => $first_child_term];
     }
     foreach ($all_parents_term as $first_key_level => $first_level_value) {
       foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
-        $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value);
-        
+        $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value['name']);
         
         if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
-          $all_parents_term[$first_key_level][$second_key_level] = $second_child_term;
-          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value => $second_child_term];
+          $formatted_arr = [];
+          foreach($second_child_term as $key => $value) {
+            $formatted_arr[$key] = $value['name'];
+          }
+          $all_parents_term[$first_key_level][$second_key_level] = $formatted_arr;
+          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr];
         }
       }
     } 

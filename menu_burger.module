@@ -58,9 +58,14 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
     // dump($variables['breadcrumb']);
     $variables['breadcrumb'][0]['text'] = str_replace('> Accueil', 'Accueil', $breadcrumbs[0]['text']);
     foreach ($breadcrumbs as  $key => $each_breadcrumb) {
+      $new_all_child = [];
       $term_name = str_replace(' > ', '', $each_breadcrumb['text']);
       $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);
-      $variables['breadcrumb'][$key]['submenu'] = $all_child;
+      foreach ($all_child as $key_child => $value_child) {
+        $new_all_child[$key_child] = $value_child['name'];
+      }
+      // dump($new_all_child);
+      $variables['breadcrumb'][$key]['submenu'] = $new_all_child;
     }
 
     
