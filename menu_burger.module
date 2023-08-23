@@ -53,9 +53,7 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
         //  je desactive le lien sur accueil et Cotations 
         $variables['breadcrumb'][$key]['url'] = NULL;
       }
-      // dump([$count, $key]);
     }
-    // dump($variables['breadcrumb']);
     $variables['breadcrumb'][0]['text'] = str_replace('> Accueil', 'Accueil', $breadcrumbs[0]['text']);
     foreach ($breadcrumbs as  $key => $each_breadcrumb) {
       $new_all_child = [];

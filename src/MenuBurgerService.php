@@ -56,13 +56,76 @@ class MenuBurgerService {
         
     }
 
+    
+    private function getAllEventId () {
+      $query = "SELECT
+        Event.start_date AS event_start_date,
+        civicrm_contact.id AS id,
+        Event.id AS event_id, 
+        Event.title as event_title
+      FROM
+        civicrm_contact
+      INNER JOIN civicrm_event AS Event ON civicrm_contact.id = Event.created_id
+      WHERE
+      DATE_FORMAT(
+              (Event.start_date  + INTERVAL 7200 SECOND),
+              '%Y-%m-%dT%H:%i:%s'
+          ) >= DATE_FORMAT(
+              (NOW() + INTERVAL 7200 SECOND),
+              '%Y-%m-%dT%H:%i:%s'
+          )
+        -- (DATE_FORMAT((Event.start_date + INTERVAL 7200 SECOND), '%Y-%m-%dT%H:%i:%s') >= DATE_FORMAT((NOW() + INTERVAL 7200 SECOND), '%Y-%m-%dT%H:%i:%s'))
+        AND
+         (Event.is_active = '1')
+      ";
+
+        $results =  \Drupal::database()->query($query)->fetchAll();
+        return $results;
+    } 
+    
+    /**
+     * 
+     */
+    private function checkIfContactIsInsideAGroup ($cid) {
+
+      $allEvent = $this->getAllEventId();
+      $contactInsideAgroup = [];
+      foreach($allEvent as $event) {
+        $event_id = $event->event_id;
+        if ($event_id) {
+
+          $events = \Civi\Api4\Event::get()
+          ->addSelect('rsvpevent_cg_linked_groups.rsvpevent_cf_linked_groups')
+          ->addWhere('id', '=', $event_id)
+          ->execute();
+          if ($events) {
+            
+            $eventGroupId = $events->getIterator();
+            $eventGroupId = iterator_to_array($eventGroupId);  
+            foreach ($eventGroupId as $group_id) {
+              $allContactId = \Civi\Api4\GroupContact::get()
+              ->addSelect('contact_id')
+              ->addWhere('group_id', '=', $group_id['rsvpevent_cg_linked_groups.rsvpevent_cf_linked_groups'][0])
+              ->execute()->getIterator();
+              $allContactId = iterator_to_array($allContactId);  
+              $allContactId = array_column($allContactId, 'contact_id');
+              $contactInsideAgroup[$event_id] = in_array($cid, $allContactId);
+            }
+            
+          }
+        }
+      }
+
+      return $contactInsideAgroup;
+    }
+
 
         /**
      * Recupère tous les reunions à venir
      * 
      */
   public function getAllMeetings ($cid) {
-      $query = "SELECT
+      /* $query = "SELECT
       Event.start_date AS event_start_date,
       civicrm_contact.id AS id,
       Event.id AS event_id, Event.title as event_title
@@ -75,8 +138,53 @@ class MenuBurgerService {
     ";
     $results =  \Drupal::database()->query($query)->fetchAll();
 
-    return $results;
+    return $results; */
+
+    $isAllowedMeeting = $this->checkIfContactIsInsideAGroup($cid);
+      
+      // Use the ArrayFilter class to remove false values
+      $isAllowedMeeting = $this->removeFalseValues($isAllowedMeeting);
+      $isAllowedMeeting = array_keys($isAllowedMeeting);
+      if ($isAllowedMeeting) {
+        $isAllowedMeeting = implode(', ', $isAllowedMeeting);
+        
+        $query = "SELECT
+      `created_id_civicrm_contact`.`start_date` AS `event_start_date`,
+      `created_id_civicrm_contact`.`title`  as event_title,
+      `civicrm_contact`.`id` AS `id`,
+      `created_id_civicrm_contact`.`id` AS `created_id_civicrm_contact_id`
+  FROM
+      `civicrm_contact`
+  INNER JOIN
+      `civicrm_event` AS `created_id_civicrm_contact` ON `civicrm_contact`.`id` = `created_id_civicrm_contact`.`created_id`
+  WHERE
+      (
+          DATE_FORMAT(
+              (`created_id_civicrm_contact`.`start_date` + INTERVAL 7200 SECOND),
+              '%Y-%m-%dT%H:%i:%s'
+          ) >= DATE_FORMAT(
+              (NOW() + INTERVAL 7200 SECOND),
+              '%Y-%m-%dT%H:%i:%s'
+          )
+      )
+      AND
+      (`created_id_civicrm_contact`.`is_active` = '1')  AND `created_id_civicrm_contact`.`id` IN (" . $isAllowedMeeting . ")   ORDER BY
+      `event_start_date` ASC limit 3;
+  ";
+      $results =  \Drupal::database()->query($query)->fetchAll();
+      
+    }
+     
+      return $results;
   }
+
+  
+  public function removeFalseValues($array) {
+    return array_filter($array, function ($value) {
+        return $value !== false;
+    });
+  }
+
 
   public function getContactIdByEmail ($email) {
     $db = \Drupal::database();
@@ -204,14 +312,15 @@ class MenuBurgerService {
           $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
 
           $children = $term_storage->loadChildren($term->id(), 'rubrique');
-          // dump([$this->getNodeFieldValue ($term, 'name'), $children], ' 555');
-          if (count($children) < 1) {
-            // dump($name);
-            $all_names[$string_url] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
-            // $all_names[$string_url] = $name;
-          }else {
-            $all_names['no-link' . $name] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
-            // $all_names['no-link' . $name] = $name;
+          $isPublished = $term->status->getValue()[0]['value'];
+          if ($isPublished > 0) {//On recupère seulement les terme publiés
+            if (count($children) < 1) {
+              $all_names[$string_url] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
+              // $all_names[$string_url] = $name;
+            }else {
+              $all_names['no-link' . $name] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
+              // $all_names['no-link' . $name] = $name;
+            }
           }
         }
       }
@@ -369,23 +478,23 @@ public function disableDuplicateHome (&$vars) {
     
     foreach($all_parents_term as $item => $menu) {
       if (strpos($item, 'no-link') ===  false) {
-        $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
+        $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
         // dump(array_keys($menu)[0]);
       }else {
-          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
+          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
         <ul class="submenu is-dropdown-submenu first-sub vertical">';
         foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
           if (strpos($key, 'no-link') ===  false) {
-            $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
+            $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
           }else {
-            $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
+            $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
             <ul class="submenu is-dropdown-submenu first-sub vertical">';  
             // dump($submenu, array_keys($submenu)[0]);
             foreach($submenu[array_keys($submenu)[0]] as $k => $v) {
               // dump($v);
               if (strpos($k, 'no-link') ===  false) {
               }
-              $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $k . '">' . $v . '</a></li>';
+              $html .= '<li class="menu-item menu-item--collapsed troisieme-niv"><a href="' . $k . '">' . $v . '</a></li>';
             }
             $html .= '</ul></li>';
 
