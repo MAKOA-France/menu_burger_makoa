@@ -218,6 +218,7 @@ class BurgerBlock  extends BlockBase  {
       $isEnabled_first_level = $first_level->link->getPluginDefinition()['enabled'];//si le menu est actif
       if ( $isEnabled_first_level) {
         // $lien = $this->getUrlC($first_level->link->getPluginId()
+        // dump($first_level->link->get('entity'));
         $all_menus[$first_level->link->getTitle()][] = $first_level->link->getTitle();
         $all_menus[$first_level->link->getTitle()]['link_menus'][] = $this->getUrlC($first_level->link->getPluginId());
         if ($first_level->subtree) {

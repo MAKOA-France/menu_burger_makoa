@@ -19,7 +19,7 @@ function menu_burger_theme($existing, $type, $theme, $path)
 
 
 
-  /**
+/**
  * Implements hook_preprocess_HOOK() for breadcrumb templates.
  */
 function  menu_burger_preprocess_breadcrumb(&$variables) {
