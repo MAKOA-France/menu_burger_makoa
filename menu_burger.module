@@ -93,5 +93,7 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
     dump($all_parents_term, 'two '); */
     // $burger_service->getAllTaxoWithHierarchy();
   }
+  $variables['breadcrumb'][0]['text'] = str_replace('> Accueil', 'Accueil', $variables['breadcrumb'][0]['text']);
+
 }
   

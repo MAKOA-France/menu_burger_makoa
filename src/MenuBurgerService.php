@@ -94,7 +94,7 @@ class MenuBurgerService {
         $event_id = $event->event_id;
         if ($event_id) {
 
-          $events = \Civi\Api4\Event::get()
+          $events = \Civi\Api4\Event::get(false)
           ->addSelect('rsvpevent_cg_linked_groups.rsvpevent_cf_linked_groups')
           ->addWhere('id', '=', $event_id)
           ->execute();
@@ -103,7 +103,7 @@ class MenuBurgerService {
             $eventGroupId = $events->getIterator();
             $eventGroupId = iterator_to_array($eventGroupId);  
             foreach ($eventGroupId as $group_id) {
-              $allContactId = \Civi\Api4\GroupContact::get()
+              $allContactId = \Civi\Api4\GroupContact::get(FALSE)
               ->addSelect('contact_id')
               ->addWhere('group_id', '=', $group_id['rsvpevent_cg_linked_groups.rsvpevent_cf_linked_groups'][0])
               ->execute()->getIterator();
@@ -314,11 +314,14 @@ class MenuBurgerService {
           $children = $term_storage->loadChildren($term->id(), 'rubrique');
           $isPublished = $term->status->getValue()[0]['value'];
           if ($isPublished > 0) {//On recupère seulement les terme publiés
+            if (!$this->hasRoleSocial() && $this->isTermSocial($term->id())) {
+              continue;
+            }
             if (count($children) < 1) {
-              $all_names[$string_url] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
+              $all_names[$string_url] = ['id' => $term->id(), 'name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
               // $all_names[$string_url] = $name;
             }else {
-              $all_names['no-link' . $name] = ['name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
+              $all_names['no-link' . $name] = ['id' => $term->id(), 'name' => $name, 'weight' => $this->getNodeFieldValue($term, 'weight')]; 
               // $all_names['no-link' . $name] = $name;
             }
           }
@@ -450,63 +453,98 @@ public function disableDuplicateHome (&$vars) {
   }
 
     public function getAllTaxoWithHierarchy () {
-    $burger_service = \Drupal::service('menu_burger.view_services');
-    $all_parents_term = $burger_service->getTaxonomyTermChildByParentName(null);
-    // asort($all_parents_term);
-    
-    foreach ($all_parents_term as $key => $value) {
-      $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value['name']);
-      $all_parents_term[$key] = [$value['name'] => $first_child_term];
-    }
-    foreach ($all_parents_term as $first_key_level => $first_level_value) {
-      foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
-        $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value['name']);
-        
-        if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
-          $formatted_arr = [];
-          foreach($second_child_term as $key => $value) {
-            $formatted_arr[$key] = $value['name'];
-          }
-          $all_parents_term[$first_key_level][$second_key_level] = $formatted_arr;
-          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr];
+      $burger_service = \Drupal::service('menu_burger.view_services');
+      $all_parents_term = $burger_service->getTaxonomyTermChildByParentName(null);
+      // asort($all_parents_term);
+
+      
+      foreach ($all_parents_term as $key => $value) {
+        $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value['name']);
+
+        //Si le role d'user courant est social et que le term est de type social aussi
+        if (!$this->hasRoleSocial() && $this->isTermSocial($value['id'])) {
+          continue;
         }
+        $all_parents_term[$key] = [$value['name'] => $first_child_term];
       }
-    } 
-    //$all_parents_term;
 
-    $html = '<ul class="dropdown menu">';
-    
-    foreach($all_parents_term as $item => $menu) {
-      if (strpos($item, 'no-link') ===  false) {
-        $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
-        // dump(array_keys($menu)[0]);
-      }else {
-          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
-        <ul class="submenu is-dropdown-submenu first-sub vertical">';
-        foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
-          if (strpos($key, 'no-link') ===  false) {
-            $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
-          }else {
-            $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
-            <ul class="submenu is-dropdown-submenu first-sub vertical">';  
-            // dump($submenu, array_keys($submenu)[0]);
-            foreach($submenu[array_keys($submenu)[0]] as $k => $v) {
-              // dump($v);
-              if (strpos($k, 'no-link') ===  false) {
+      foreach ($all_parents_term as $first_key_level => $first_level_value) {
+        foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
+          $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value['name']);
+          
+          if (!$this->hasRoleSocial() && $this->isTermSocial($second_level_value['id'])) {
+            continue;
+          }
+          if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
+            $formatted_arr = [];
+            foreach($second_child_term as $key => $value) {
+              if (!$this->hasRoleSocial() && $this->isTermSocial($value['id'])) {
+                continue;
               }
-              $html .= '<li class="menu-item menu-item--collapsed troisieme-niv"><a href="' . $k . '">' . $v . '</a></li>';
+              $formatted_arr[$key] = $value['name'];
             }
-            $html .= '</ul></li>';
 
+            $all_parents_term[$first_key_level][$second_key_level] = $formatted_arr;
+            $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr];
           }
         }
-        $html .= '</ul></li>';
       } 
-  }
-  $html .= '</ul>' ;
+      //$all_parents_term;
 
-  return $html;
+      $html = '<ul class="dropdown menu">';
+      
+      foreach($all_parents_term as $item => $menu) {
+        if (strpos($item, 'no-link') ===  false) {
+          if (array_keys($menu)[0] != 'id') {
+            $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
+          }
+        }else {
+          if (array_keys($menu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
+            $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
+            <ul class="submenu is-dropdown-submenu first-sub vertical">';
+            foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
+              
+              if (array_keys($submenu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
+
+                if (strpos($key, 'no-link') ===  false) {
+                  $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
+                }else {
+                  $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
+                  <ul class="submenu is-dropdown-submenu first-sub vertical">';  
+                  // dump($submenu, array_keys($submenu)[0]);
+                  foreach($submenu[array_keys($submenu)[0]] as $k => $v) {
+                    
+                    if (strpos($k, 'no-link') ===  false) {
+                    }
+                    $html .= '<li class="menu-item menu-item--collapsed troisieme-niv"><a href="' . $k . '">' . $v . '</a></li>';
+                  }
+                  $html .= '</ul></li>';
+                
+                }
+              }
+            }
+          $html .= '</ul></li>';
+        }
+        } 
+    }
+    $html .= '</ul>' ;
+
+    return $html;
 
     
+  }
+
+  private function isTermSocial ($termId) {
+    $term = Term::load($termId);
+    return $this->getNodeFieldValue($term, 'field_social');
+  }
+
+  private function hasRoleSocial() {
+    // Get the current user object.
+    $current_user = \Drupal::currentUser();
+
+    // Get an array of role IDs for the current user.
+    $user_roles = $current_user->getRoles();
+    return in_array('social', $user_roles);
   }
 }

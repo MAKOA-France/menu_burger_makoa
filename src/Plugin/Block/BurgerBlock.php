@@ -6,6 +6,7 @@ use Drupal\node\Entity\Node;
 use \Drupal\node\NodeInterface;
 use Drupal\Core\Block\BlockBase;
 use Drupal\media\Entity\Media;
+use Drupal\taxonomy\Entity\Term;
 
 
 use Drupal\Core\Menu\MenuLinkTreeInterface;
@@ -218,24 +219,32 @@ class BurgerBlock  extends BlockBase  {
       $isEnabled_first_level = $first_level->link->getPluginDefinition()['enabled'];//si le menu est actif
       if ( $isEnabled_first_level) {
         // $lien = $this->getUrlC($first_level->link->getPluginId()
-        // dump($first_level->link->get('entity'));
-        $all_menus[$first_level->link->getTitle()][] = $first_level->link->getTitle();
+        // $term_id = $first_level->link->getPluginDefinition()['route_parameters']['taxonomy_term'];
+        // $is_social = $this->checkIfThereIsDocumentLinkedWithThisTerm($term_id, $first_level->link->getTitle());
+
+
         $all_menus[$first_level->link->getTitle()]['link_menus'][] = $this->getUrlC($first_level->link->getPluginId());
         if ($first_level->subtree) {
           foreach ($first_level->subtree as $second_level) {
             // dump($second_level->link, $second_level);
             $isEnabled_second_level = $second_level->link->getPluginDefinition()['enabled'];
             if ($isEnabled_second_level) {
-              $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][] = $second_level->link->getTitle();
-              $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()]['link_menus'][] = $this->getUrlC($second_level->link->getPluginId());
-              if ($second_level->subtree) {
-                foreach ($second_level->subtree as $third_level) {
-                  $isEnabled_third_level = $third_level->link->getPluginDefinition()['enabled'];
-                  if ($isEnabled_third_level) {
-                    $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][$third_level->link->getTitle()]['link_menus'][] = $this->getUrlC($third_level->link->getPluginId());
-                    $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][$third_level->link->getTitle()][] = $third_level->link->getTitle();
+
+
+              $term_id = $second_level->link->getPluginDefinition()['route_parameters']['taxonomy_term'];
+              $is_social = $this->checkIfThereIsDocumentLinkedWithThisTerm($term_id, $second_level->link->getTitle());
+              if (!$is_social) {//TODO CONDITION ROLE SOCIAL AUSSI
+                  $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][] = $second_level->link->getTitle();
+                  $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()]['link_menus'][] = $this->getUrlC($second_level->link->getPluginId());
+                  if ($second_level->subtree) {
+                    foreach ($second_level->subtree as $third_level) {
+                      $isEnabled_third_level = $third_level->link->getPluginDefinition()['enabled'];
+                      if ($isEnabled_third_level) {
+                        $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][$third_level->link->getTitle()]['link_menus'][] = $this->getUrlC($third_level->link->getPluginId());
+                        $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][$third_level->link->getTitle()][] = $third_level->link->getTitle();
+                      }
+                    }
                   }
-                }
               }
             } 
           }
@@ -246,6 +255,34 @@ class BurgerBlock  extends BlockBase  {
     return $all_menus;
   }
 
+  /**
+   * 
+   */
+  private function checkIfThereIsDocumentLinkedWithThisTerm($termId, $name) {
+    // Load the taxonomy term by ID.
+    $burger_service = \Drupal::service('menu_burger.view_services');
+    if ($termId) {
+      
+      $term = Term::load($termId);
+      $string_query = 'select entity_id from media__field_tags where field_tags_target_id = ' . $termId;
+      $all_linked_doc = \Drupal::database()->query($string_query)->fetchAll();
+      $hasSocialDocument = false;
+      if ($all_linked_doc) {
+        $all_linked_doc = array_column($all_linked_doc, 'entity_id');
+        $mediaDocuments = Media::loadmultiple($all_linked_doc);
+        if ($mediaDocuments) {
+          foreach ($mediaDocuments as $idDoc => $document) {
+            $isSocial = $burger_service->getNodeFieldValue($document, 'field_social');
+            if ($isSocial > 0) {
+              $hasSocialDocument = true;
+              break;
+            }
+          }
+        }
+      }
+      return $hasSocialDocument;
+    }
+  }
 
 
 
