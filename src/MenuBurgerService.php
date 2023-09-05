@@ -293,7 +293,6 @@ class MenuBurgerService {
 
       foreach ($terms as $index => $term) {
         // if (isset($term->values['weight']['x-default'])) {
-          // dump($this->isTermLinkedWithMenu($term->id()), $term->name->value);
         if($this->isTermLinkedWithMenu($term->id())) {
           $weight = $this->getNodeFieldValue($term, 'weight');
           $tempArray[$index] = $weight;
@@ -303,7 +302,6 @@ class MenuBurgerService {
 
       // Triez le tableau temporaire par valeurs de poids
       asort($tempArray);
-      // dump($tempArray);
 
       foreach ($terms as $term) {
         if($this->isTermLinkedWithMenu($term->id())) {
@@ -327,11 +325,9 @@ class MenuBurgerService {
           }
         }
       }
-      // dump($all_names);
       
       // Tri du tableau en utilisant la fonction de comparaison
       uasort($all_names, [$this, 'compareByWeight']);
-      // dump('after', $all_names);
 
       return $all_names;
     }
@@ -511,7 +507,6 @@ public function disableDuplicateHome (&$vars) {
                 }else {
                   $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
                   <ul class="submenu is-dropdown-submenu first-sub vertical">';  
-                  // dump($submenu, array_keys($submenu)[0]);
                   foreach($submenu[array_keys($submenu)[0]] as $k => $v) {
                     
                     if (strpos($k, 'no-link') ===  false) {
@@ -543,8 +538,12 @@ public function disableDuplicateHome (&$vars) {
     // Get the current user object.
     $current_user = \Drupal::currentUser();
 
+    $user = \Drupal\user\Entity\User::load($current_user->id());
+
     // Get an array of role IDs for the current user.
     $user_roles = $current_user->getRoles();
-    return in_array('social', $user_roles);
+    $is_admin = $user->hasRole('administrator');
+  
+    return in_array('social', $user_roles) || $is_admin;
   }
 }
