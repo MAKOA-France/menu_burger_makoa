@@ -264,7 +264,7 @@ class BurgerBlock  extends BlockBase  {
     if ($termId) {
       
       $term = Term::load($termId);
-      $string_query = 'select entity_id from media__field_tags where field_tags_target_id = ' . $termId;
+      $string_query = 'select entity_id from media__field_tag where field_tag_target_id = ' . $termId;
       $all_linked_doc = \Drupal::database()->query($string_query)->fetchAll();
       $hasSocialDocument = false;
       if ($all_linked_doc) {

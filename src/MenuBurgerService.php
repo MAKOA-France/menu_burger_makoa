@@ -269,7 +269,6 @@ class MenuBurgerService {
     $parent_terms = \Drupal::entityTypeManager()
     ->getStorage('taxonomy_term')
     ->loadByProperties($property_array);
-    
     $child_term_ids = '';
 
     if (!empty($parent_terms)) {
@@ -293,6 +292,7 @@ class MenuBurgerService {
 
       foreach ($terms as $index => $term) {
         // if (isset($term->values['weight']['x-default'])) {
+          // dump($this->isTermLinkedWithMenu($term->id()));
         if($this->isTermLinkedWithMenu($term->id())) {
           $weight = $this->getNodeFieldValue($term, 'weight');
           $tempArray[$index] = $weight;
@@ -328,7 +328,6 @@ class MenuBurgerService {
       
       // Tri du tableau en utilisant la fonction de comparaison
       uasort($all_names, [$this, 'compareByWeight']);
-
       return $all_names;
     }
   }
@@ -340,13 +339,25 @@ class MenuBurgerService {
 
   private function isTermLinkedWithMenu ($term_id) {
     $term = \Drupal\taxonomy\Entity\Term::load($term_id);
-
     // Check if the term entity is valid
     if ($term) {
-        // Check if there are menu links associated with the term
-        $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
-        $menu_links = $menu_link_manager->loadLinksByRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $term_id]);
-        return !empty($menu_links);
+      // Check if there are menu links associated with the term
+      // $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+      // $menu_links = $menu_link_manager->loadLinksByRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $term_id]);
+
+      $title = $this->getNodeFieldValue($term, 'name');
+      $title = str_replace("'", "''", $title);
+      $query = "select enabled from menu_link_content_data where title =  '$title'"; 
+      if (\Drupal::database()->query($query)) {
+
+        if (\Drupal::database()->query($query)) {
+          $fetched  = \Drupal::database()->query($query)->fetchAll();
+          $fetched = array_column($fetched, 'enabled');
+          return in_array('1', $fetched);
+        }
+      } 
+
+      return false;
     }
   }
 
@@ -428,8 +439,7 @@ public function disableDuplicateHome (&$vars) {
         LEFT JOIN civicrm_group_contact civicrm_group_contact ON civicrm_contact.id = civicrm_group_contact.contact_id AND civicrm_group_contact.status = 'Added'
         LEFT JOIN civicrm_group civicrm_group_civicrm_group_contact ON civicrm_group_contact.group_id = civicrm_group_civicrm_group_contact.id
     WHERE
-        (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')
-        AND (civicrm_group_civicrm_group_contact.is_active = '1')
+         (civicrm_group_civicrm_group_contact.is_active = '1')
         AND civicrm_contact.id = $cid
     GROUP BY
         civicrm_group_civicrm_group_contact_id,
@@ -450,10 +460,9 @@ public function disableDuplicateHome (&$vars) {
 
     public function getAllTaxoWithHierarchy () {
       $burger_service = \Drupal::service('menu_burger.view_services');
-      $all_parents_term = $burger_service->getTaxonomyTermChildByParentName(null);
+      $all_parents_term = $this->getTaxonomyTermChildByParentName(null);
       // asort($all_parents_term);
 
-      
       foreach ($all_parents_term as $key => $value) {
         $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value['name']);
 

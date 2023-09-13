@@ -59,12 +59,17 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
       $new_all_child = [];
       $term_name = str_replace(' > ', '', $each_breadcrumb['text']);
       $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);
+      
       foreach ($all_child as $key_child => $value_child) {
         $new_all_child[$key_child] = $value_child['name'];
       }
-      // dump($new_all_child);
       $variables['breadcrumb'][$key]['submenu'] = $new_all_child;
     }
+
+    $variables['breadcrumb'] = array_slice($variables['breadcrumb'], 0, -1); // remove duplicate of current page
+
+    
+    
 
     
 /*     $all_parents_term = $burger_service->getTaxonomyTermChildByParentName(null);
