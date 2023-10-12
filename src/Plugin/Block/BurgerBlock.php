@@ -72,7 +72,7 @@ class BurgerBlock  extends BlockBase  {
     
     $all_menus = $this->getAllMenuHierarchy ($tree, $manipulators);
 
-    $html = '<ul class="dropdown menu">';
+    $html = '<ul class="dropdown menu letit">';
     foreach ($all_menus as $key => $men)  {
       if (count($men)< 3) {
          if (!is_int($key)) {

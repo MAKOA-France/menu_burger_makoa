@@ -439,9 +439,9 @@ public function disableDuplicateHome (&$vars) {
         LEFT JOIN civicrm_group_contact civicrm_group_contact ON civicrm_contact.id = civicrm_group_contact.contact_id AND civicrm_group_contact.status = 'Added'
         LEFT JOIN civicrm_group civicrm_group_civicrm_group_contact ON civicrm_group_contact.group_id = civicrm_group_civicrm_group_contact.id
     WHERE
-    (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')  AND
+    -- (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')  AND
          (civicrm_group_civicrm_group_contact.is_active = '1')
-        -- AND civicrm_contact.id = $cid
+        AND civicrm_contact.id = $cid
     GROUP BY
         civicrm_group_civicrm_group_contact_id,
         civicrm_group_civicrm_group_contact_title,
@@ -498,7 +498,11 @@ public function disableDuplicateHome (&$vars) {
       //$all_parents_term;
 
       $html = '<ul class="dropdown menu">';
-      
+
+
+      //Ne pas afficher le menu commission parmis les termes, on l'affiche differament
+      unset($all_parents_term['/accueil/commissions']);
+
       foreach($all_parents_term as $item => $menu) {
         if (strpos($item, 'no-link') ===  false) {
           if (array_keys($menu)[0] != 'id') {
@@ -532,11 +536,32 @@ public function disableDuplicateHome (&$vars) {
         }
         } 
     }
-    $html .= '</ul>' ;
+
+    $allGroupAfficherSurExtranet = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Commissions<span class="switch-collapsible"></span></a>
+    <ul class="submenu is-dropdown-submenu first-sub vertical" style="display: block;">';
+    
+    foreach ($this->getGoupeAfficherSurExtranet() as $group => $groupValue) {
+      $allGroupAfficherSurExtranet .= ' <li class="menu-item menu-item--collapsed second-niv">
+      <a href="/civicrm-group/' . $groupValue['id']  . '">' . $groupValue['title'] . '</a>
+    </li>';
+    }
+
+    $allGroupAfficherSurExtranet .= '</ul></li>';
+    $html .= $allGroupAfficherSurExtranet . '</ul>' ;
 
     return $html;
 
     
+  }
+
+  private function getGoupeAfficherSurExtranet () {
+    $groups = \Civi\Api4\Group::get(FALSE)
+      ->addSelect('id', 'title')
+      ->addWhere('group_type', 'CONTAINS', 3)
+      ->addWhere('is_active', '=', TRUE)
+      ->execute()->getIterator();
+    $groups = iterator_to_array($groups);   
+    return $groups;
   }
 
   private function isTermSocial ($termId) {
