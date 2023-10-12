@@ -502,6 +502,7 @@ public function disableDuplicateHome (&$vars) {
 
       //Ne pas afficher le menu commission parmis les termes, on l'affiche differament
       unset($all_parents_term['/accueil/commissions']);
+      unset($all_parents_term['no-linkCommissions']);
 
       foreach($all_parents_term as $item => $menu) {
         if (strpos($item, 'no-link') ===  false) {
