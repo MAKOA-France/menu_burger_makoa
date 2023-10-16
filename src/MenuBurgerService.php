@@ -439,7 +439,7 @@ public function disableDuplicateHome (&$vars) {
         LEFT JOIN civicrm_group_contact civicrm_group_contact ON civicrm_contact.id = civicrm_group_contact.contact_id AND civicrm_group_contact.status = 'Added'
         LEFT JOIN civicrm_group civicrm_group_civicrm_group_contact ON civicrm_group_contact.group_id = civicrm_group_civicrm_group_contact.id
     WHERE
-    -- (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')  AND
+    (civicrm_group_civicrm_group_contact.group_type LIKE '%3%')  AND
          (civicrm_group_civicrm_group_contact.is_active = '1')
         AND civicrm_contact.id = $cid
     GROUP BY
