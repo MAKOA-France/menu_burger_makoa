@@ -41,7 +41,7 @@ class BurgerBlock  extends BlockBase  {
     $account = \Drupal\user\Entity\User::load($user_id);
     // Get the user's email address.
     $email = $account->getEmail();
-    $cid = $burger_service->getContactIdByEmail($email);
+    $cid = $user_id ? $burger_service->getContactIdByEmail($email) : \Drupal::request()->query->get('cid2');
     $all_meetings = $burger_service->getAllMeetings($cid);
     foreach ($all_meetings as $meet) {
       $formated_date = $burger_service->formatDateWithMonthInLetterAndHours ($meet->event_start_date);
