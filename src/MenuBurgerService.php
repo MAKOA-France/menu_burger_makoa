@@ -55,6 +55,7 @@ class MenuBurgerService {
         return $allMeetings; */
         
     }
+    
 
     
     private function getAllEventId () {
@@ -102,6 +103,8 @@ class MenuBurgerService {
             
             $eventGroupId = $events->getIterator();
             $eventGroupId = iterator_to_array($eventGroupId);  
+            $current_user = \Drupal::currentUser();
+            $user_roles = $current_user->getRoles();
             foreach ($eventGroupId as $group_id) {
               $allContactId = \Civi\Api4\GroupContact::get(FALSE)
               ->addSelect('contact_id')
@@ -109,7 +112,13 @@ class MenuBurgerService {
               ->execute()->getIterator();
               $allContactId = iterator_to_array($allContactId);  
               $allContactId = array_column($allContactId, 'contact_id');
-              $contactInsideAgroup[$event_id] = in_array($cid, $allContactId);
+
+              $authorizedToSeeAllmeet = in_array($cid, $allContactId);
+              if (in_array('administrator', $user_roles) || in_array('super_utilisateur', $user_roles) || in_array('permanent', $user_roles)) {
+                $authorizedToSeeAllmeet = true;
+              }
+              
+              $contactInsideAgroup[$event_id] = $authorizedToSeeAllmeet;
             }
             
           }
@@ -520,10 +529,11 @@ public function disableDuplicateHome (&$vars) {
                 if (strpos($key, 'no-link') ===  false) {
                   $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
                 }else {
+                  $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : '';
                   $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
-                  <ul class="submenu is-dropdown-submenu first-sub vertical">';  
+                  <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . '  " >';  
+
                   foreach($submenu[array_keys($submenu)[0]] as $k => $v) {
-                    
                     if (strpos($k, 'no-link') ===  false) {
                     }
                     $html .= '<li class="menu-item menu-item--collapsed troisieme-niv"><a href="' . $k . '">' . $v . '</a></li>';
@@ -553,6 +563,23 @@ public function disableDuplicateHome (&$vars) {
     return $html;
 
     
+  }
+
+  private function toggleClassMenu ($submenu) {
+    $state = [];
+    foreach($submenu as $k => $v) {
+      $path_alias_manager = \Drupal::service('path_alias.manager');
+
+      $current_path = \Drupal::service('path.current')->getPath();
+      $alias = $path_alias_manager->getAliasByPath($current_path);
+
+      if (strpos($alias, $k) !== false) {
+        $state[] = 'yes';
+        break;
+      }
+    }
+
+    return $state;
   }
 
   private function getGoupeAfficherSurExtranet () {
