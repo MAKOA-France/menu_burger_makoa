@@ -520,8 +520,9 @@ public function disableDuplicateHome (&$vars) {
           }
         }else {
           if (array_keys($menu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
+            $toggleClasses = in_array('yes', $this->toggleClassMenu($menu[array_keys($menu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
             $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
-            <ul class="submenu is-dropdown-submenu first-sub vertical">';
+            <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
             foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
               
               if (array_keys($submenu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
@@ -529,7 +530,7 @@ public function disableDuplicateHome (&$vars) {
                 if (strpos($key, 'no-link') ===  false) {
                   $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
                 }else {
-                  $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : '';
+                  $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
                   $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
                   <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . '  " >';  
 
