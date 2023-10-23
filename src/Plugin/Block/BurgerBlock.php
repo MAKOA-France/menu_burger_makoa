@@ -33,7 +33,7 @@ class BurgerBlock  extends BlockBase  {
     // Get the current user.
     $current_user = \Drupal::currentUser();
     $user_id = $current_user->id();
-
+    \Drupal::cache()->invalidateAll();
     // Load CiviCRM API
     \Drupal::service('civicrm')->initialize();
     $burger_service = \Drupal::service('menu_burger.view_services');
@@ -41,7 +41,8 @@ class BurgerBlock  extends BlockBase  {
     $account = \Drupal\user\Entity\User::load($user_id);
     // Get the user's email address.
     $email = $account->getEmail();
-    $cid = $user_id ? $burger_service->getContactIdByEmail($email) : \Drupal::request()->query->get('cid2');
+    $getId = \Drupal::request()->query->get('cid2') ? \Drupal::request()->query->get('cid2') : \Drupal::request()->query->get('cid');
+    $cid = $user_id ? $burger_service->getContactIdByEmail($email) : $getId;
     $all_meetings = $burger_service->getAllMeetings($cid);
     foreach ($all_meetings as $meet) {
       $formated_date = $burger_service->formatDateWithMonthInLetterAndHours ($meet->event_start_date);
@@ -50,8 +51,13 @@ class BurgerBlock  extends BlockBase  {
       $meet->linked_group = $linked_group;
     }
 
+    $idHash = \Civi\Api4\Contact::get(FALSE)
+    ->selectRowCount()
+    ->addSelect('hash')
+    ->addWhere('id', '=', $cid)
+    ->execute()->first()['hash'];
 
-    $link_ask_question = '/form/poser-une-question?cid2=' . $user_id;
+    $link_ask_question = '/form/poser-une-question?cid2=' . $cid . '&token=' . $idHash;
 
      // Change 'menu-principal' to the machine name of the menu you want to display.
     $menu_name = 'menu-principal';
