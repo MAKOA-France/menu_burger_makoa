@@ -58,7 +58,9 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
     foreach ($breadcrumbs as  $key => $each_breadcrumb) {
       $new_all_child = [];
       $term_name = str_replace(' > ', '', $each_breadcrumb['text']);
-      $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);
+      if (!is_array($term_name)) {
+        $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);
+      }
       
       foreach ($all_child as $key_child => $value_child) {
         $new_all_child[$key_child] = $value_child['name'];
@@ -102,3 +104,11 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
 
 }
   
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function menu_burger_preprocess_page(&$variables)
+{
+  $variables['#attached']['library'][] = 'menu_burger/menu_burger';
+}

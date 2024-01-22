@@ -265,7 +265,15 @@ class MenuBurgerService {
    */
   public function getTaxonomyTermChildByParentName ($term_label) {
     // The name of the taxonomy vocabulary (change this to your specific vocabulary machine name).
+    // Get the current request object.
+    $request = \Drupal::request();
+
+    // Get the base URL of the Drupal site including the protocol.
+    $base_url = \Drupal::request()->getSchemeAndHttpHost();
+
+
     $taxonomy_vocabulary = 'rubrique';
+   
 
     // The label of the term you want to load.
 
@@ -273,14 +281,15 @@ class MenuBurgerService {
     if ($term_label) {
       $property_array['name'] =  $term_label;
     }
-      
     // Load the term by its label and the vocabulary it belongs to.
     $parent_terms = \Drupal::entityTypeManager()
     ->getStorage('taxonomy_term')
     ->loadByProperties($property_array);
     $child_term_ids = '';
-
+    
+    
     if (!empty($parent_terms)) {
+      
       // Get the first parent term from the result.
       $parent_term = reset($parent_terms);
 
@@ -318,7 +327,11 @@ class MenuBurgerService {
           $string_url = $term->toUrl()->toString();
           $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
 
-          $children = $term_storage->loadChildren($term->id(), 'rubrique');
+          $vocab_name = 'rubrique';
+          if (strpos($base_url, 'metiers-viande.') !== false) {
+            $vocab_name = 'metiers_viande_com';
+          }
+          $children = $term_storage->loadChildren($term->id(), $vocab_name);
           $isPublished = $term->status->getValue()[0]['value'];
           if ($isPublished > 0) {//On recupère seulement les terme publiés
             if (!$this->hasRoleSocial() && $this->isTermSocial($term->id())) {
@@ -468,6 +481,93 @@ public function disableDuplicateHome (&$vars) {
     return $results;
   }
 
+  
+
+  private   function calculateTermDepth(\Drupal\taxonomy\Entity\Term $term) {
+    $depth = 0;
+    dump([$term->get('parent')->getValue()[0]['target_id'], 'misy ']);
+    // while ($term->getParent() instanceof \Drupal\taxonomy\Entity\Term) {
+      // $term = $term->getParent();
+      // $depth++;
+    // }
+    return $depth;
+  }
+
+  public function getAllTaxoWithHierarchySiteMetier ($taxonomy_vocabulary) {
+    
+    // The label of the term you want to load.
+
+    $property_array = ['vid' => $taxonomy_vocabulary];
+    if ($term_label) {
+      $property_array['name'] =  $term_label;
+    }
+      
+    $metier_vocab = 'metiers_viande_com';
+    // Load the term by its label and the vocabulary it belongs to.
+    $parent_terms =   \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['vid' => 'metiers_viande_com']);
+    $terms = \Drupal::entityTypeManager()
+      ->getStorage('taxonomy_term')
+      ->loadByProperties(['vid' => $metier_vocab]);
+
+
+      // Load the first-level terms (root terms) of the vocabulary.
+      $first_level_terms = \Drupal::entityTypeManager()
+      ->getStorage('taxonomy_term')
+      ->loadTree('metiers_viande_com', 0, 1, true);
+
+      $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+
+
+      $first_parent_id = $first_level_terms[0]->get('tid')->getValue()[0]['value'];
+      $children = $term_storage->loadChildren($first_parent_id, $vocab_name);
+      
+      
+      //TODO creer une fonction pour le menu SITE METIER et faire le refactoring
+
+      $html = '<ul class="dropdown menu menu-site-metier">';
+
+        // dump($first_level_terms, $children);
+      foreach ($children as $term) {
+        $term_name = $this->getNodeFieldValue($term, 'name');
+        $term_id = $term->id();
+
+        
+
+        //checker si le terme à un enfant
+        $children = $term_storage->loadChildren($term_id, $vocab_name);
+        if ($children) {
+          $html .= '<li class="  li-'. $toggleClasses . ' menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . $term_name . '<span class="switch-collapsible"></span></a>
+              <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
+          foreach ($children as $id_term_child => $term_child) {
+            $term_name = $this->getNodeFieldValue($term_child, 'name');
+
+            //checker si le terme à un enfant
+            $children = $term_storage->loadChildren($id_term_child, $vocab_name);
+            if ($children) {
+              
+              $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . $term_name . '<span class="switch-collapsible"></span></a>
+              <ul class="submenu is-dropdown-submenu first-sub vertical  " >';  
+              foreach ($children as $id_term_child_1 => $term_child_1) {
+                $term_name = $this->getNodeFieldValue($term_child_1, 'name');
+                $html .= '<li class="' . $toggleClasses . ' menu-item menu-item--collapsed troisieme-niv"><a href="/taxonomy/term/' . $id_term_child_1 . '">' . $term_name . '</a></li>';
+              }
+              $html .= '</ul></li>';
+            }else {
+              $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="/taxonomy/term/' . $id_term_child . '">' . $term_name . '</a></li>';
+            }
+          }
+          $html .= '</ul></li>';
+        }else {
+          $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="/taxonomy/term/' . $term_id . '">' .  $term_name . '</a></li>';
+        }
+
+      }
+
+      $html .= '</ul>';
+
+    return $html;
+  }
+
     public function getAllTaxoWithHierarchy () {
       $burger_service = \Drupal::service('menu_burger.view_services');
       $all_parents_term = $this->getTaxonomyTermChildByParentName(null);
@@ -566,13 +666,17 @@ public function disableDuplicateHome (&$vars) {
     
   }
 
-  private function toggleClassMenu ($submenu) {
+  private function toggleClassMenu ($submenu, $first_element = false) {
     $state = [];
     foreach($submenu as $k => $v) {
       $path_alias_manager = \Drupal::service('path_alias.manager');
-
       $current_path = \Drupal::service('path.current')->getPath();
       $alias = $path_alias_manager->getAliasByPath($current_path);
+      if ($first_element) {
+        if(array_key_exists($alias, reset($v))) {
+          $state[] = 'yes';
+        }
+      }
 
       if (strpos($alias, $k) !== false) {
         $state[] = 'yes';
