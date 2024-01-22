@@ -33,97 +33,108 @@ class BurgerBlock  extends BlockBase  {
     // Get the current user.
     $current_user = \Drupal::currentUser();
     $user_id = $current_user->id();
-    \Drupal::cache()->invalidateAll();
-    // Load CiviCRM API
-    \Drupal::service('civicrm')->initialize();
-    $burger_service = \Drupal::service('menu_burger.view_services');
-    // Load the user account entity to access the email field.
-    $account = \Drupal\user\Entity\User::load($user_id);
-    // Get the user's email address.
-    $email = $account->getEmail();
-    $getId = \Drupal::request()->query->get('cid2') ? \Drupal::request()->query->get('cid2') : \Drupal::request()->query->get('cid');
-    $cid = $user_id ? $burger_service->getContactIdByEmail($email) : $getId;
-    $all_meetings = $burger_service->getAllMeetings($cid);
-    foreach ($all_meetings as $meet) {
-      $formated_date = $burger_service->formatDateWithMonthInLetterAndHours ($meet->event_start_date);
-      $meet->formated_start_date = $formated_date;
-      $linked_group = $burger_service->getLinkedGroupWithEvent ($meet->event_id); 
-      $meet->linked_group = $linked_group;
-    }
+    // Get the base URL of the Drupal site including the protocol.
+      $base_url = \Drupal::request()->getSchemeAndHttpHost();
+    if ($user_id) {
 
-    $idHash = \Civi\Api4\Contact::get(FALSE)
-    ->selectRowCount()
-    ->addSelect('hash')
-    ->addWhere('id', '=', $cid)
-    ->execute()->first()['hash'];
-
-    $link_ask_question = '/form/poser-une-question?cid2=' . $cid . '&token=' . $idHash;
-
-     // Change 'menu-principal' to the machine name of the menu you want to display.
-    $menu_name = 'menu-principal';
-    $depth = 3;
-
-    $menuLinkTree = \Drupal::service('menu.link_tree');
-    $parameters = new MenuTreeParameters();
-    $parameters->setMaxDepth($depth);
-    $tree = $menuLinkTree->load($menu_name, $parameters);
-    $menu_tree_service = \Drupal::service('menu.link_tree');
-
-    // Optionally, you can transform the tree into a renderable array.
-    $manipulators = [
-      ['callable' => 'menu.default_tree_manipulators:checkAccess'],
-      ['callable' => 'menu.default_tree_manipulators:generateIndexAndSort'],
-    ];
-    $tree = $menu_tree_service->transform($tree, $manipulators);
-    
-    $all_menus = $this->getAllMenuHierarchy ($tree, $manipulators);
-
-    $html = '<ul class="dropdown menu letit">';
-    foreach ($all_menus as $key => $men)  {
-      if (count($men)< 3) {
-         if (!is_int($key)) {
-           $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $men['link_menus'][0] . '">' . $key . '</a></li>';
-          }
-      }else {
-          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $key . '<span class="switch-collapsible"></span></a>
-          <ul class="submenu is-dropdown-submenu first-sub vertical">';
-          foreach ($men as $first_key => $firs_elem) {
-            if (count($firs_elem)< 3) {
-              if (!is_int($first_key) && $first_key != 'link_menus') {
-                $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $firs_elem['link_menus'][0] . '">' . $first_key . '</a></li>';
-              }
-            }else {
-              $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $first_key . '<span class="switch-collapsible"></span></a><ul class="submenu is-dropdown-submenu second-sub vertical">';
-              foreach ($firs_elem as $second_key => $second_elem) {
-                  if (!is_int($second_key) && $second_key != 'link_menus') {
-                    $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $second_elem['link_menus'][0] . '">' . $second_key . '</a>';
-                  }
-              }
-              $html .= '</ul></li>';
-            }
-          }
-          $html .= '</ul></li>';
+      \Drupal::cache()->invalidateAll();
+      // Load CiviCRM API
+      \Drupal::service('civicrm')->initialize();
+      $burger_service = \Drupal::service('menu_burger.view_services');
+      // Load the user account entity to access the email field.
+      $account = \Drupal\user\Entity\User::load($user_id);
+      // Get the user's email address.
+      $email = $account->getEmail();
+      $getId = \Drupal::request()->query->get('cid2') ? \Drupal::request()->query->get('cid2') : \Drupal::request()->query->get('cid');
+      $cid = $user_id ? $burger_service->getContactIdByEmail($email) : $getId;
+      $all_meetings = $burger_service->getAllMeetings($cid);
+      foreach ($all_meetings as $meet) {
+        $formated_date = $burger_service->formatDateWithMonthInLetterAndHours ($meet->event_start_date);
+        $meet->formated_start_date = $formated_date;
+        $linked_group = $burger_service->getLinkedGroupWithEvent ($meet->event_id); 
+        $meet->linked_group = $linked_group;
       }
+
+      $idHash = \Civi\Api4\Contact::get(FALSE)
+      ->selectRowCount()
+      ->addSelect('hash')
+      ->addWhere('id', '=', $cid)
+      ->execute()->first()['hash'];
+
+      $link_ask_question = (strpos($base_url, 'metiers-viande.') === false) ? '/form/poser-une-question?cid2=' . $cid . '&token=' . $idHash : false;
+
+      // Change 'menu-principal' to the machine name of the menu you want to display.
+      $menu_name = 'menu-principal';
+      $depth = 3;
+
+      $menuLinkTree = \Drupal::service('menu.link_tree');
+      $parameters = new MenuTreeParameters();
+      $parameters->setMaxDepth($depth);
+      $tree = $menuLinkTree->load($menu_name, $parameters);
+      $menu_tree_service = \Drupal::service('menu.link_tree');
+
+      // Optionally, you can transform the tree into a renderable array.
+      $manipulators = [
+        ['callable' => 'menu.default_tree_manipulators:checkAccess'],
+        ['callable' => 'menu.default_tree_manipulators:generateIndexAndSort'],
+      ];
+      $tree = $menu_tree_service->transform($tree, $manipulators);
+      
+      $all_menus = $this->getAllMenuHierarchy ($tree, $manipulators);
+
+      $html = '<ul class="dropdown menu letit">';
+      foreach ($all_menus as $key => $men)  {
+        if (count($men)< 3) {
+          if (!is_int($key)) {
+            $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $men['link_menus'][0] . '">' . $key . '</a></li>';
+            }
+        }else {
+            $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $key . '<span class="switch-collapsible"></span></a>
+            <ul class="submenu is-dropdown-submenu first-sub vertical">';
+            foreach ($men as $first_key => $firs_elem) {
+              if (count($firs_elem)< 3) {
+                if (!is_int($first_key) && $first_key != 'link_menus') {
+                  $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $firs_elem['link_menus'][0] . '">' . $first_key . '</a></li>';
+                }
+              }else {
+                $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right"><a href="#">' . $first_key . '<span class="switch-collapsible"></span></a><ul class="submenu is-dropdown-submenu second-sub vertical">';
+                foreach ($firs_elem as $second_key => $second_elem) {
+                    if (!is_int($second_key) && $second_key != 'link_menus') {
+                      $html .= '<li class="menu-item menu-item--collapsed"><a href="' . $second_elem['link_menus'][0] . '">' . $second_key . '</a>';
+                    }
+                }
+                $html .= '</ul></li>';
+              }
+            }
+            $html .= '</ul></li>';
+        }
+      }
+      $html .= '</ul>';
+
+      
+      $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchy()];
+      // $markup = ['#markup' => $html];
+      if (strpos($base_url, 'metiers-viande.') !== false) {
+        $taxonomy_vocabulary = 'metiers_viande_com';
+        $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchySiteMetier($taxonomy_vocabulary)];
+      }
+      $renderable_menu = \Drupal::service('renderer')->render($markup);
+      if ($cid && (strpos($base_url, 'metiers-viande.') === false)) {
+        $all_groups = $burger_service->getAllMyGroup($cid);
+      }
+
+      return [
+        '#theme' => 'menu_burger_block',
+        '#cache' => ['max-age' => 0],
+        '#content' => [
+          'meeting' => (strpos($base_url, 'metiers-viande.') === false) ? $all_meetings : false, 
+          'groups' => $all_groups,
+          'main_menus' => $all_menus,
+          'html_menu' => $renderable_menu,
+          'link_ask_question' => $link_ask_question
+        ],
+      ];
     }
-    $html .= '</ul>';
-
-
-    // $markup = ['#markup' => $html];
-    $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchy()];
-    $renderable_menu = \Drupal::service('renderer')->render($markup);
-    $all_groups = $burger_service->getAllMyGroup($cid);
-
-    return [
-      '#theme' => 'menu_burger_block',
-      '#cache' => ['max-age' => 0],
-      '#content' => [
-        'meeting' => $all_meetings, 
-        'groups' => $all_groups,
-        'main_menus' => $all_menus,
-        'html_menu' => $renderable_menu,
-        'link_ask_question' => $link_ask_question
-      ],
-    ];
     
   }
 
