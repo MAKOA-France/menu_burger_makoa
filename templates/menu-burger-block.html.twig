@@ -84,6 +84,8 @@
         </span>
         {% endif %}
 
+
+        {% if content.link_ask_question %}
         <span class="menu-poser-question">
 
              <a data-toggle="dropdown" data-target="#submenu-burger-question" class="item-sub-menu-burger">
@@ -96,6 +98,21 @@
                     </a>
                 </div>
         </span>
+        {% endif %}
     </div>
 
 </div>
+
+<script>
+jQuery(document).ready(function() {
+    if (jQuery('.page-taxonomys').length){
+        jQuery('.content-menu-burger span:first').click();
+    }
+    jQuery('body').on('click', '.li-menu-to-be-showed', function()  {
+        console.log(jQuery(this).find('ul.menu-to-be-showed').length, 'fired')
+        jQuery('.li-menu-to-be-showed').find('ul.menu-to-be-showed').removeClass('menu-to-be-showed');
+
+         jQuery('.li-menu-to-be-showed').find('ul.menu-to-be-showed').hide();
+    });
+});
+</script>
