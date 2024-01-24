@@ -355,10 +355,15 @@ class MenuBurgerService {
   }
 
   // Fonction de comparaison personnalisée basée sur le poids
+  private static  function compareByWeightTerm($a, $b) {
+    // dump($a->get('weight')->getValue());
+    return $a->get('weight')->getValue()[0]['value'] - $b->get('weight')->getValue()[0]['value'];
+  }
+
+  // Fonction de comparaison personnalisée basée sur le poids
   private static  function compareByWeight($a, $b) {
     return $a["weight"] - $b["weight"];
   }
-
   private function isTermLinkedWithMenu ($term_id) {
     $term = \Drupal\taxonomy\Entity\Term::load($term_id);
     // Check if the term entity is valid
@@ -485,7 +490,6 @@ public function disableDuplicateHome (&$vars) {
 
   private   function calculateTermDepth(\Drupal\taxonomy\Entity\Term $term) {
     $depth = 0;
-    dump([$term->get('parent')->getValue()[0]['target_id'], 'misy ']);
     // while ($term->getParent() instanceof \Drupal\taxonomy\Entity\Term) {
       // $term = $term->getParent();
       // $depth++;
@@ -538,6 +542,7 @@ public function disableDuplicateHome (&$vars) {
         if ($children) {
           $html .= '<li class="  li-'. $toggleClasses . ' menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . $term_name . '<span class="switch-collapsible"></span></a>
               <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
+              uasort($children, [$this, 'compareByWeightTerm']);
           foreach ($children as $id_term_child => $term_child) {
             $term_name = $this->getNodeFieldValue($term_child, 'name');
 
