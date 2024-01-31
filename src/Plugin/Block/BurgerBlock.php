@@ -34,13 +34,14 @@ class BurgerBlock  extends BlockBase  {
     $current_user = \Drupal::currentUser();
     $user_id = $current_user->id();
     // Get the base URL of the Drupal site including the protocol.
-      $base_url = \Drupal::request()->getSchemeAndHttpHost();
+      
+    $base_url = \Drupal::request()->getSchemeAndHttpHost();
+    \Drupal::cache()->invalidateAll();
+    // Load CiviCRM API
+    \Drupal::service('civicrm')->initialize();
+    $burger_service = \Drupal::service('menu_burger.view_services');
     if ($user_id) {
 
-      \Drupal::cache()->invalidateAll();
-      // Load CiviCRM API
-      \Drupal::service('civicrm')->initialize();
-      $burger_service = \Drupal::service('menu_burger.view_services');
       // Load the user account entity to access the email field.
       $account = \Drupal\user\Entity\User::load($user_id);
       // Get the user's email address.
@@ -111,6 +112,7 @@ class BurgerBlock  extends BlockBase  {
       }
       $html .= '</ul>';
 
+    }
       
       $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchy()];
       // $markup = ['#markup' => $html];
@@ -134,7 +136,6 @@ class BurgerBlock  extends BlockBase  {
           'link_ask_question' => $link_ask_question
         ],
       ];
-    }
     
   }
 
@@ -183,6 +184,23 @@ class BurgerBlock  extends BlockBase  {
     }
 
     return $submenus;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function blockAccess(\Drupal\Core\Session\AccountInterface $account) {
+    // You can add your custom access logic here.
+    // For example, allow access only for authenticated users.
+    //Ne pas afficher si le nom de domaine est l'extranet
+    //On affiche seulement si le nom de domaine est metier
+    if ($account->isAnonymous()) {
+      $base_url = \Drupal::request()->getSchemeAndHttpHost();
+      if (strpos($base_url, 'metiers-viande.') === false) {
+        return  \Drupal\Core\Access\AccessResult::forbidden();
+      }
+    }
+    return  \Drupal\Core\Access\AccessResult::allowed();
   }
 
 
