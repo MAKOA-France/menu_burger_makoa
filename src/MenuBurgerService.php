@@ -664,7 +664,7 @@ public function disableDuplicateHome (&$vars) {
     }
 
     $allGroupAfficherSurExtranet .= '</ul></li>';
-    $html .= $allGroupAfficherSurExtranet . '</ul>' ;
+    // $html .= $allGroupAfficherSurExtranet . '</ul>' ;   //Commenté car le client ne veux plus qu'on l'affiche dans le menu (en bas de la liste)
 
     return $html;
 
