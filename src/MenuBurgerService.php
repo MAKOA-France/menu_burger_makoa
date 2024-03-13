@@ -541,7 +541,7 @@ public function disableDuplicateHome (&$vars) {
         $children = $term_storage->loadChildren($term_id, $vocab_name);
         if ($children) {
           $html .= '<li class="  li-'. $toggleClasses . ' menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . $term_name . '<span class="switch-collapsible"></span></a>
-              <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
+              <ul class=" metier-first-menu submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
               uasort($children, [$this, 'compareByWeightTerm']);
           foreach ($children as $id_term_child => $term_child) {
             $term_name = $this->getNodeFieldValue($term_child, 'name');
@@ -551,7 +551,7 @@ public function disableDuplicateHome (&$vars) {
             if ($children) {
               
               $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . $term_name . '<span class="switch-collapsible"></span></a>
-              <ul class="submenu is-dropdown-submenu first-sub vertical  " >';  
+              <ul class=" metier-second-menu submenu is-dropdown-submenu first-sub vertical  " >';  
               foreach ($children as $id_term_child_1 => $term_child_1) {
                 $term_name = $this->getNodeFieldValue($term_child_1, 'name');
                 $html .= '<li class="' . $toggleClasses . ' menu-item menu-item--collapsed troisieme-niv"><a href="/taxonomy/term/' . $id_term_child_1 . '">' . $term_name . '</a></li>';
