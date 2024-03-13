@@ -1,12 +1,24 @@
 <div class="content-menu-burger">
 
-    <span class="menu-open">
-        <i class="fa fa-bars"></i>
-    </span>
+    {% if content.isSiteMetier %}
+    <div id="block-b-zf-branding " class="block-system block-b-zf-branding">
+        <a href="/" title="Accueil" rel="home" class="site-logo">
+            <img class="metier-logo-cv" src="/files/Groupe_2.png" alt="Accueil">
+        </a>
+      </div>
+    {% endif %}
+    
+    {% if not content.isSiteMetier %}
+        <span class="menu-open">
+            <i class="fa fa-bars"></i>
+        </span>
+    {% endif %}
 
-    <span class="menu-close">
-        <i class="fa fa-times"></i>
-    </span>
+    {# {% if not content.isSiteMetier %} #}
+        <span class="menu-close">
+            <i class="fa fa-times"></i>
+        </span>
+    {# {% endif %} #}
 
    {#   <ul class="dropdown menu">
         {% for main_menu in content.main_menus %}
@@ -32,10 +44,10 @@
 
         {% endfor %}
     </ul>  #}
-<nav role="navigation" id="block-menuprincipal" class="block-menu block-taxonomymenu block-hierarchical-taxonomy-menu navigation menu--menu-principal">
+<nav role="navigation" id="block-menuprincipal" class="{{ content.nav_metier }} block-menu block-taxonomymenu block-hierarchical-taxonomy-menu navigation menu--menu-principal">
     {{ content.html_menu }}
 </nav>
-    <div class="content-sub-menu-burger">
+    <div class="content-sub-menu-burger {{ content.class_sub_burger }} ">
 
         {% if content.meeting %}
                 <span class="menu-reunion" >
