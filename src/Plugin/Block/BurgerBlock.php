@@ -62,6 +62,8 @@ class BurgerBlock  extends BlockBase  {
       ->addWhere('id', '=', $cid)
       ->execute()->first()['hash'];
 
+
+
       $link_ask_question = (strpos($base_url, 'metiers-viande.') === false) ? '/form/poser-une-question?cid2=' . $cid . '&token=' . $idHash : false;
 
       // Change 'menu-principal' to the machine name of the menu you want to display.
@@ -125,6 +127,9 @@ class BurgerBlock  extends BlockBase  {
         $all_groups = $burger_service->getAllMyGroup($cid);
       }
 
+      $isSiteMetier = (strpos($base_url, 'metiers-viande.') !== false) ? true : false;
+      $class_nav_site_metier = $isSiteMetier ? ' nav_custom_class_metier ' : '';
+      $class_sub_menu_burger = $isSiteMetier ? ' site-metier-sub-menu-burger ' : '';
       return [
         '#theme' => 'menu_burger_block',
         '#cache' => ['max-age' => 0],
@@ -133,7 +138,10 @@ class BurgerBlock  extends BlockBase  {
           'groups' => $all_groups,
           'main_menus' => $all_menus,
           'html_menu' => $renderable_menu,
-          'link_ask_question' => $link_ask_question
+          'link_ask_question' => $link_ask_question, 
+          'isSiteMetier' => $isSiteMetier,
+          'nav_metier' => $class_nav_site_metier, 
+          'class_sub_burger' => $class_sub_menu_burger
         ],
       ];
     
