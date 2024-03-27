@@ -334,7 +334,7 @@ class MenuBurgerService {
           $children = $term_storage->loadChildren($term->id(), $vocab_name);
           $isPublished = $term->status->getValue()[0]['value'];
           if ($isPublished > 0) {//On recupère seulement les terme publiés
-            if (!$this->hasRoleSocial() && $this->isTermSocial($term->id())) {
+            if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($term->id())) {
               continue;
             }
             if (count($children) < 1) {
@@ -582,7 +582,7 @@ public function disableDuplicateHome (&$vars) {
         $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value['name']);
 
         //Si le role d'user courant est social et que le term est de type social aussi
-        if (!$this->hasRoleSocial() && $this->isTermSocial($value['id'])) {
+        if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
           continue;
         }
         $all_parents_term[$key] = [$value['name'] => $first_child_term];
@@ -592,13 +592,13 @@ public function disableDuplicateHome (&$vars) {
         foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
           $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value['name']);
           
-          if (!$this->hasRoleSocial() && $this->isTermSocial($second_level_value['id'])) {
+          if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($second_level_value['id'])) {
             continue;
           }
           if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
             $formatted_arr = [];
             foreach($second_child_term as $key => $value) {
-              if (!$this->hasRoleSocial() && $this->isTermSocial($value['id'])) {
+              if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
                 continue;
               }
               $formatted_arr[$key] = $value['name'];
@@ -615,8 +615,8 @@ public function disableDuplicateHome (&$vars) {
 
 
       //Ne pas afficher le menu commission parmis les termes, on l'affiche differament
-      unset($all_parents_term['/accueil/commissions']);
-      unset($all_parents_term['no-linkCommissions']);
+      // unset($all_parents_term['/accueil/commissions']);
+      // unset($all_parents_term['no-linkCommissions']);
 
       foreach($all_parents_term as $item => $menu) {
         if (strpos($item, 'no-link') ===  false) {
@@ -718,5 +718,19 @@ public function disableDuplicateHome (&$vars) {
     $is_admin = $user->hasRole('administrator');
   
     return in_array('social', $user_roles) || $is_admin;
+  }
+
+  private function hasRoleSUorPermanent() {
+    // Get the current user object.
+    $current_user = \Drupal::currentUser();
+
+    $user = \Drupal\user\Entity\User::load($current_user->id());
+
+    // Get an array of role IDs for the current user.
+    $user_roles = $current_user->getRoles();
+    $is_admin = $user->hasRole('administrator');
+    if ($is_admin) return true;
+  
+    return in_array('permanent', $user_roles) || in_array('super_utilisateur', $user_roles) ;
   }
 }
