@@ -733,4 +733,14 @@ public function disableDuplicateHome (&$vars) {
   
     return in_array('permanent', $user_roles) || in_array('super_utilisateur', $user_roles) ;
   }
+
+  
+  public function getUserRoles () {
+    $current_user = \Drupal::currentUser();
+
+    $user = \Drupal\user\Entity\User::load($current_user->id());
+
+    // Get an array of role IDs for the current user.
+    return $current_user->getRoles();
+  }
 }

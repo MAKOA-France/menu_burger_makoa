@@ -42,6 +42,15 @@ class BurgerBlock  extends BlockBase  {
     $burger_service = \Drupal::service('menu_burger.view_services');
     if ($user_id) {
 
+      $userRole = $burger_service->getUserRoles();
+      /** Si l'utilisateur n'a aucun rôle ou adherent sans communication on n'affiche pas le menu */
+      if (!in_array($userRole, 'administrator') && !in_array($userRole, 'admin_client') && !in_array($userRole, 'super_utilisateur') && !in_array($userRole, 'permanent')
+      && !in_array($userRole, 'permanent_lecture')&& !in_array($userRole, 'animateur')&& !in_array($userRole, 'adherent')&& !in_array($userRole, 'social')
+      ) {
+        return;
+      }
+
+
       // Load the user account entity to access the email field.
       $account = \Drupal\user\Entity\User::load($user_id);
       // Get the user's email address.
