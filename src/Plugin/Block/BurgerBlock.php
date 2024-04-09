@@ -45,7 +45,7 @@ class BurgerBlock  extends BlockBase  {
       $userRole = $burger_service->getUserRoles();
       /** Si l'utilisateur n'a aucun rôle ou adherent sans communication on n'affiche pas le menu */
       if (!in_array( 'administrator', $userRole) && !in_array( 'admin_client', $userRole) && !in_array( 'super_utilisateur', $userRole) && !in_array( 'permanent', $userRole)
-      && !in_array( 'permanent_lecture', $userRole)&& !in_array( 'animateur', $userRole)&& !in_array( 'adherent', $userRole)&& !in_array( 'social', $userRole)
+      && !in_array( 'permanent_lecture', $userRole)&& !in_array( 'adherent', $userRole)&& !in_array( 'social', $userRole)
       ) {
         return;
       }
