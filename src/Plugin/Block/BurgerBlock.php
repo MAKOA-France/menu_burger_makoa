@@ -47,7 +47,7 @@ class BurgerBlock  extends BlockBase  {
       if (!in_array($userRole, 'administrator') && !in_array($userRole, 'admin_client') && !in_array($userRole, 'super_utilisateur') && !in_array($userRole, 'permanent')
       && !in_array($userRole, 'permanent_lecture')&& !in_array($userRole, 'animateur')&& !in_array($userRole, 'adherent')&& !in_array($userRole, 'social')
       ) {
-        return;
+        // return;
       }
 
 
