@@ -573,6 +573,114 @@ public function disableDuplicateHome (&$vars) {
     return $html;
   }
 
+  public function getAllTaxoWithHierarchyPublicSite () {
+    $burger_service = \Drupal::service('menu_burger.view_services');
+    $all_parents_term = $this->getTaxonomyTermChildByParentName(null);
+
+    
+    /** n'extraire des termes que Communication & interprofession et Culture viande pour le menu site public */
+
+    $whiteListtermMenu = [6238, 5538, 6271];
+    foreach ($all_parents_term as $k => $v) {
+      if (!in_array($v['id'], $whiteListtermMenu)) {
+        unset($all_parents_term[$k]);
+      }
+    }
+
+
+    foreach ($all_parents_term as $key => $value) {
+      $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value['name']);
+
+      //Si le role d'user courant est social et que le term est de type social aussi
+      if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
+        continue;
+      }
+      $all_parents_term[$key] = [$value['name'] => $first_child_term];
+    }
+
+    foreach ($all_parents_term as $first_key_level => $first_level_value) {
+      foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
+        $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value['name']);
+        
+        if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($second_level_value['id'])) {
+          continue;
+        }
+        if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
+          $formatted_arr = [];
+          foreach($second_child_term as $key => $value) {
+            if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
+              continue;
+            }
+            $formatted_arr[$key] = $value['name'];
+          }
+
+          $all_parents_term[$first_key_level][$second_key_level] = $formatted_arr;
+          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr];
+        }
+      }
+    } 
+    //$all_parents_term;
+
+    $html = '<ul class="dropdown menu">';
+
+
+    //Ne pas afficher le menu commission parmis les termes, on l'affiche differament
+    // unset($all_parents_term['/accueil/commissions']);
+    // unset($all_parents_term['no-linkCommissions']);
+
+    foreach($all_parents_term as $item => $menu) {
+      if (strpos($item, 'no-link') ===  false) {
+        if (array_keys($menu)[0] != 'id') {
+          $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
+        }
+      }else {
+        if (array_keys($menu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
+          $toggleClasses = in_array('yes', $this->toggleClassMenu($menu[array_keys($menu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
+          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
+          <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
+          foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
+            
+            if (array_keys($submenu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
+
+              if (strpos($key, 'no-link') ===  false) {
+                $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
+              }else {
+                $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
+                $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
+                <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . '  " >';  
+
+                foreach($submenu[array_keys($submenu)[0]] as $k => $v) {
+                  if (strpos($k, 'no-link') ===  false) {
+                  }
+                  $html .= '<li class="menu-item menu-item--collapsed troisieme-niv"><a href="' . $k . '">' . $v . '</a></li>';
+                }
+                $html .= '</ul></li>';
+              
+              }
+            }
+          }
+        $html .= '</ul></li>';
+      }
+      } 
+  }
+
+  $allGroupAfficherSurExtranet = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Commissions<span class="switch-collapsible"></span></a>
+  <ul class="submenu is-dropdown-submenu first-sub vertical" style="display: block;">';
+  
+  foreach ($this->getGoupeAfficherSurExtranet() as $group => $groupValue) {
+    $allGroupAfficherSurExtranet .= ' <li class="menu-item menu-item--collapsed second-niv">
+    <a href="/civicrm-group/' . $groupValue['id']  . '">' . $groupValue['title'] . '</a>
+  </li>';
+  }
+
+  $allGroupAfficherSurExtranet .= '</ul></li>';
+  // $html .= $allGroupAfficherSurExtranet . '</ul>' ;   //Commenté car le client ne veux plus qu'on l'affiche dans le menu (en bas de la liste)
+
+  return $html;
+
+  
+}
+
     public function getAllTaxoWithHierarchy () {
       $burger_service = \Drupal::service('menu_burger.view_services');
       $all_parents_term = $this->getTaxonomyTermChildByParentName(null);

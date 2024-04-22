@@ -1,11 +1,11 @@
 <div class="content-menu-burger">
 
     {% if content.isSiteMetier %}
-    <div id="block-b-zf-branding " class="block-system block-b-zf-branding">
-        <a href="/" title="Accueil" rel="home" class="site-logo">
-            <img class="metier-logo-cv" src="/files/Groupe_2.png" alt="Accueil">
-        </a>
-      </div>
+        <div id="block-b-zf-branding " class="block-system block-b-zf-branding">
+            <a href="/" title="Accueil" rel="home" class="site-logo">
+                <img class="metier-logo-cv" src="/files/Groupe_2.png" alt="Accueil">
+            </a>
+        </div>
     {% endif %}
     
     {% if not content.isSiteMetier %}
@@ -44,76 +44,78 @@
 
         {% endfor %}
     </ul>  #}
-<nav role="navigation" id="block-menuprincipal" class="{{ content.nav_metier }} block-menu block-taxonomymenu block-hierarchical-taxonomy-menu navigation menu--menu-principal">
-    {{ content.html_menu }}
-</nav>
-    <div class="content-sub-menu-burger {{ content.class_sub_burger }} ">
+    <nav role="navigation" id="block-menuprincipal" class="{{ content.nav_metier }} block-menu block-taxonomymenu block-hierarchical-taxonomy-menu navigation menu--menu-principal">
+        {{ content.html_menu }}
+    </nav>
+    {% if not content.isSitePublic %}
+        <div class="content-sub-menu-burger {{ content.class_sub_burger }} ">
 
-        {% if content.meeting %}
-                <span class="menu-reunion" >
-                    <a class="item-sub-menu-burger" data-toggle="dropdown" data-target="#submenu-burger-reunion" >
-                        <i class="icon-custom-calendar"></i>
-                        <span class="span-title-burger">Réunions</span>
-                    </a>
-                    <div id="submenu-burger-reunion" class="dropdown-sub-menu-burger">   
-                    
-                        {% for key, elm in content.meeting %}
-                            <a href="/civicrm-event/{{ elm.created_id_civicrm_contact_id }}" class="dropdown-item-burger">
-                            
-                                <div class="icon-reunion">
-                                    <i class="icon-custom-calendar"></i>
-                                </div>
+            {% if content.meeting %}
+                    <span class="menu-reunion" >
+                        <a class="item-sub-menu-burger" data-toggle="dropdown" data-target="#submenu-burger-reunion" >
+                            <i class="icon-custom-calendar"></i>
+                            <span class="span-title-burger">Réunions</span>
+                        </a>
+                        <div id="submenu-burger-reunion" class="dropdown-sub-menu-burger">   
+                        
+                            {% for key, elm in content.meeting %}
+                                <a href="/civicrm-event/{{ elm.created_id_civicrm_contact_id }}" class="dropdown-item-burger">
+                                
+                                    <div class="icon-reunion">
+                                        <i class="icon-custom-calendar"></i>
+                                    </div>
 
-                                <div class="details-reunion">
-                                    <span class="title_reunion">{{ elm.event_title }}</span>
-                                    <span class="date_reunion">{{ elm.formated_start_date.day }} {{ elm.formated_start_date.month }} {{ elm.formated_start_date.year }}</span>
-                                    <span class="separator_reunion"> | </span> 
-                                    <span class="hour_reunion">{{ elm.formated_start_date.hour }}:{{ elm.formated_start_date.minute }}</span>
-                                </div>
+                                    <div class="details-reunion">
+                                        <span class="title_reunion">{{ elm.event_title }}</span>
+                                        <span class="date_reunion">{{ elm.formated_start_date.day }} {{ elm.formated_start_date.month }} {{ elm.formated_start_date.year }}</span>
+                                        <span class="separator_reunion"> | </span> 
+                                        <span class="hour_reunion">{{ elm.formated_start_date.hour }}:{{ elm.formated_start_date.minute }}</span>
+                                    </div>
+                                </a>
+                            {% endfor %} 
+                                <a href="/toutes-mes-reunions" class="dropdown-item-burger all-my-reunion">Toutes mes réunions</a>
+                        
+                        </div>
+                    </span>
+            {% endif %}
+            {% if content.groups %}
+            <span class="menu-commission">
+                <a data-toggle="dropdown" data-target="#submenu-burger-commission" class="item-sub-menu-burger">
+                    <i class="icon-custom-commission"></i>                
+                    <span class="span-title-burger">Mes commissions</span>
+                </a>
+                    <div id="submenu-burger-commission" class="dropdown-sub-menu-burger"> 
+                
+                        {% for id, group in content.groups %}
+                            <a href="/civicrm-group/{{ group.civicrm_group_civicrm_group_contact_id }}" class="dropdown-item-burger">
+                                <i class="icon-custom-group-person icon-comission"></i> {{ group.civicrm_group_civicrm_group_contact_title }} 
                             </a>
                         {% endfor %} 
-                            <a href="/toutes-mes-reunions" class="dropdown-item-burger all-my-reunion">Toutes mes réunions</a>
-                    
+
+                        <a href="/tous-mes-groupes" class="dropdown-item-burger all-my-commission">Mes commissions/groupes</a>
                     </div>
-                </span>
-        {% endif %}
-        {% if content.groups %}
-        <span class="menu-commission">
-            <a data-toggle="dropdown" data-target="#submenu-burger-commission" class="item-sub-menu-burger">
-                <i class="icon-custom-commission"></i>                
-                <span class="span-title-burger">Mes commissions</span>
-            </a>
-                <div id="submenu-burger-commission" class="dropdown-sub-menu-burger"> 
-            
-                    {% for id, group in content.groups %}
-                        <a href="/civicrm-group/{{ group.civicrm_group_civicrm_group_contact_id }}" class="dropdown-item-burger">
-                            <i class="icon-custom-group-person icon-comission"></i> {{ group.civicrm_group_civicrm_group_contact_title }} 
+            </span>
+            {% endif %}
+
+
+            {% if content.link_ask_question %}
+            <span class="menu-poser-question">
+
+                <a data-toggle="dropdown" data-target="#submenu-burger-question" class="item-sub-menu-burger">
+                    <i class="fa fa-question-circle"></i>                                
+                    <span class="span-title-burger">Poser une question</span>
+                </a>
+                    <div id="submenu-burger-question" class="dropdown-sub-menu-burger"> 
+                        <a href="{{ content.link_ask_question }}" class="dropdown-item-burger dropdown-burger-ask-question">
+                            <i class="fa fa-question-circle icon-question"></i> Poser une question
                         </a>
-                    {% endfor %} 
+                    </div>
+            </span>
+            {% endif %}
+        </div>
+    {% endif %}
 
-                    <a href="/tous-mes-groupes" class="dropdown-item-burger all-my-commission">Mes commissions/groupes</a>
-                </div>
-        </span>
-        {% endif %}
-
-
-        {% if content.link_ask_question %}
-        <span class="menu-poser-question">
-
-             <a data-toggle="dropdown" data-target="#submenu-burger-question" class="item-sub-menu-burger">
-                <i class="fa fa-question-circle"></i>                                
-                <span class="span-title-burger">Poser une question</span>
-            </a>
-                <div id="submenu-burger-question" class="dropdown-sub-menu-burger"> 
-                    <a href="{{ content.link_ask_question }}" class="dropdown-item-burger dropdown-burger-ask-question">
-                        <i class="fa fa-question-circle icon-question"></i> Poser une question
-                    </a>
-                </div>
-        </span>
-        {% endif %}
     </div>
-
-</div>
 
 <script>
 jQuery(document).ready(function() {

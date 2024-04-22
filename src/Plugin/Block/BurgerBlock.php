@@ -124,8 +124,18 @@ class BurgerBlock  extends BlockBase  {
       $html .= '</ul>';
 
     }
-      
+    
+    dump('fireing');
       $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchy()];
+    
+      /** POUR LE SITE PUBLIC  */
+      $isSitePublic = (strpos($base_url, 'cultureviande.dev.makoa.net') !== false)  || (strpos($base_url, 'cultureviande.makoa4.makoa.net') !== false) ? true : false;
+      if (strpos($base_url, 'cultureviande.dev.makoa.net') !== false OR strpos($base_url, 'cultureviande.makoa4.makoa.net') !== false) {
+        $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchyPublicSite()];
+      }
+      
+      /** END SITE PUBLIC */
+
       // $markup = ['#markup' => $html];
       if (strpos($base_url, 'metiers-viande.') !== false) {
         $taxonomy_vocabulary = 'metiers_viande_com';
@@ -139,16 +149,20 @@ class BurgerBlock  extends BlockBase  {
       $isSiteMetier = (strpos($base_url, 'metiers-viande.') !== false) ? true : false;
       $class_nav_site_metier = $isSiteMetier ? ' nav_custom_class_metier ' : '';
       $class_sub_menu_burger = $isSiteMetier ? ' site-metier-sub-menu-burger ' : '';
+      
+
+
       return [
         '#theme' => 'menu_burger_block',
         '#cache' => ['max-age' => 0],
         '#content' => [
-          'meeting' => (strpos($base_url, 'metiers-viande.') === false) ? $all_meetings : false, 
+          'meeting' => (strpos($base_url, 'metiers-viande.') === false)  && (strpos($base_url, 'cultureviande.dev.makoa.net') === false)   && (strpos($base_url, 'cultureviande.makoa4.makoa.net') === false) ? $all_meetings : false, 
           'groups' => $all_groups,
           'main_menus' => $all_menus,
           'html_menu' => $renderable_menu,
           'link_ask_question' => $link_ask_question, 
           'isSiteMetier' => $isSiteMetier,
+          'isSitePublic' => $isSitePublic,
           'nav_metier' => $class_nav_site_metier, 
           'class_sub_burger' => $class_sub_menu_burger
         ],
