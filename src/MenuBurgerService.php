@@ -545,6 +545,11 @@ public function disableDuplicateHome (&$vars) {
               uasort($children, [$this, 'compareByWeightTerm']);
           foreach ($children as $id_term_child => $term_child) {
             $term_name = $this->getNodeFieldValue($term_child, 'name');
+            
+            //On n'affiche pas le menu si le term n'est pas publié
+            if ($term_child->status->value <1) { 
+              continue;
+            }
 
             //checker si le terme à un enfant
             $children = $term_storage->loadChildren($id_term_child, $vocab_name);
@@ -553,6 +558,11 @@ public function disableDuplicateHome (&$vars) {
               $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . $term_name . '<span class="switch-collapsible"></span></a>
               <ul class=" metier-second-menu submenu is-dropdown-submenu first-sub vertical  " >';  
               foreach ($children as $id_term_child_1 => $term_child_1) {
+                
+                 //On n'affiche pas le menu si le term n'est pas publié
+                if ($term_child_1->status->value <1) { 
+                  continue;
+                }
                 $term_name = $this->getNodeFieldValue($term_child_1, 'name');
                 $html .= '<li class="' . $toggleClasses . ' menu-item menu-item--collapsed troisieme-niv"><a href="/taxonomy/term/' . $id_term_child_1 . '">' . $term_name . '</a></li>';
               }
