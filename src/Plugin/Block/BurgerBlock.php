@@ -125,10 +125,10 @@ class BurgerBlock  extends BlockBase  {
 
     }
     
-    dump('fireing');
+    
       $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchy()];
     
-      /** POUR LE SITE PUBLIC  */
+      /** TODO MEP POUR LE SITE PUBLIC  */
       $isSitePublic = (strpos($base_url, 'cultureviande.dev.makoa.net') !== false)  || (strpos($base_url, 'cultureviande.makoa4.makoa.net') !== false) ? true : false;
       if (strpos($base_url, 'cultureviande.dev.makoa.net') !== false OR strpos($base_url, 'cultureviande.makoa4.makoa.net') !== false) {
         $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchyPublicSite()];
@@ -227,7 +227,7 @@ class BurgerBlock  extends BlockBase  {
     //On affiche seulement si le nom de domaine est metier
     if ($account->isAnonymous()) {
       $base_url = \Drupal::request()->getSchemeAndHttpHost();
-      if (strpos($base_url, 'metiers-viande.') === false) {
+      if ((strpos($base_url, 'metiers-viande.') === false) && (strpos($base_url, 'cultureviande.') === false)) {
         return  \Drupal\Core\Access\AccessResult::forbidden();
       }
     }
