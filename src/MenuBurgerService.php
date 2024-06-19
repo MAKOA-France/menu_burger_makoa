@@ -16,6 +16,7 @@ use Drupal\taxonomy\Entity\Vocabulary;
  */
 class MenuBurgerService {
 
+  const DOMAIN_PUBLIC = "cultureviande_dev_makoa_net";
 
     public function getMeetings() {
         $query = "SELECT
@@ -511,7 +512,7 @@ public function disableDuplicateHome (&$vars) {
     $parent_terms =   \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['vid' => 'metiers_viande_com']);
     $terms = \Drupal::entityTypeManager()
       ->getStorage('taxonomy_term')
-      ->loadByProperties(['vid' => $metier_vocab]);
+      ->loadByProperties(['vid' => $metier_vocab,  'status' => 1]);
 
 
       // Load the first-level terms (root terms) of the vocabulary.
@@ -573,6 +574,42 @@ public function disableDuplicateHome (&$vars) {
     return $html;
   }
 
+
+  public function sitePublicTerms () {
+    $checked_site_public_term_parent = [];
+    $entity_type_manager = \Drupal::service('entity_type.manager');
+
+    // Get the entity type manager service.
+    $entity_type_manager = \Drupal::service('entity_type.manager');
+
+    // Specify the vocabulary machine name.
+    $vocabulary_machine_name = 'rubrique';
+
+    // Load the vocabulary.
+    $vocabulary = $entity_type_manager->getStorage('taxonomy_vocabulary')->load($vocabulary_machine_name);
+
+    if ($vocabulary) {
+      // Get the ID of the vocabulary.
+      $vid = $vocabulary->id();
+
+      // Get all level 1 terms of the specified vocabulary.
+      $storage = $entity_type_manager->getStorage('taxonomy_term');
+      $level_1_terms = $storage->loadTree($vid, 4966, 1, TRUE);
+      // Loop through the level 1 terms.
+      foreach ($level_1_terms as $term) {
+        // vérifier si le domain "site public " est coché
+        $isSitePublic = $term->get('field_domain_acces')->getValue();
+        if ($isSitePublic) {
+          $isSitePublic = array_column($isSitePublic, 'target_id');
+          if (in_array(self::DOMAIN_PUBLIC, $isSitePublic)) {//todo mise en prod
+            $checked_site_public_term_parent[] = $term->id();
+          }
+        }
+      }
+    }
+    return $checked_site_public_term_parent;
+  }
+
   public function getAllTaxoWithHierarchyPublicSite () {
     $burger_service = \Drupal::service('menu_burger.view_services');
     $all_parents_term = $this->getTaxonomyTermChildByParentName(null);
@@ -580,7 +617,8 @@ public function disableDuplicateHome (&$vars) {
     
     /** n'extraire des termes que Communication & interprofession et Culture viande pour le menu site public */
 
-    $whiteListtermMenu = [6238, 5538, 6271];
+    $whiteListtermMenu = $this->sitePublicTerms();
+
     foreach ($all_parents_term as $k => $v) {
       if (!in_array($v['id'], $whiteListtermMenu)) {
         unset($all_parents_term[$k]);
@@ -621,7 +659,7 @@ public function disableDuplicateHome (&$vars) {
     } 
     //$all_parents_term;
 
-    $html = '<ul class="dropdown menu">';
+    $html = '<ul class="dropdown menu cv-pub-site"><li class="menu-item menu-item--collapsed premier-niv"><a href="/">Accueil</a></li>';
 
 
     //Ne pas afficher le menu commission parmis les termes, on l'affiche differament
@@ -631,7 +669,8 @@ public function disableDuplicateHome (&$vars) {
     foreach($all_parents_term as $item => $menu) {
       if (strpos($item, 'no-link') ===  false) {
         if (array_keys($menu)[0] != 'id') {
-          $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
+          //ne pas afficher "export"
+          // $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
         }
       }else {
         if (array_keys($menu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
@@ -654,16 +693,20 @@ public function disableDuplicateHome (&$vars) {
                   }
                   $html .= '<li class="menu-item menu-item--collapsed troisieme-niv"><a href="' . $k . '">' . $v . '</a></li>';
                 }
+                
                 $html .= '</ul></li>';
               
               }
             }
           }
-        $html .= '</ul></li>';
-      }
+          $html .= '</ul></li>';
+        }
       } 
-  }
-
+    }
+    
+    $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="https://metiers-viande.makoa4.makoa.net/accueil-metier">Site métier</a></li>';
+    
+    $html .= $this->createMenuFiliere();
   $allGroupAfficherSurExtranet = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Commissions<span class="switch-collapsible"></span></a>
   <ul class="submenu is-dropdown-submenu first-sub vertical" style="display: block;">';
   
@@ -681,6 +724,46 @@ public function disableDuplicateHome (&$vars) {
   
 }
 
+public function getFilieres () {
+  $filiere = [];
+  $optionValues = \Civi\Api4\OptionValue::get(FALSE)
+      ->addSelect('label', 'name', 'description')
+      ->addWhere('option_group_id', '=', 163)
+      ->execute();
+
+  //ajouter de l'icone avec les filieres    
+
+  foreach ($optionValues as $optionValue) {
+      $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description']]; 
+  }
+  return $filiere;
+}
+
+public function createMenuFiliere () {
+  $html = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Filières<span class="switch-collapsible"></span></a>
+  <ul class="submenu is-dropdown-submenu first-sub vertical  menu-to-be-hide  " style="display: none;">';
+  $allFilieres = array_keys($this->getFilieres());
+  foreach ($allFilieres as $filiere) {//TODO MENU LIEN VERS CHAQUE FILIERE
+    $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="#">' . $filiere . '</a></li>';
+  }
+  $html .= '</ul></li>';
+  return $html;
+}
+
+/**
+ * Determine si dans le terme "site public" est coché
+ */
+public function isTermForSitePub ($termId) {
+  $term = Term::load($termId);
+  $isSitePub = false;
+  $domainType = $this->getNodeFieldValue($term , 'field_domain_acces');
+  if ($domainType == self::DOMAIN_PUBLIC) {
+    $isSitePub = true;
+  }
+
+  return $isSitePub;
+}
+
     public function getAllTaxoWithHierarchy () {
       $burger_service = \Drupal::service('menu_burger.view_services');
       $all_parents_term = $this->getTaxonomyTermChildByParentName(null);
@@ -688,9 +771,17 @@ public function disableDuplicateHome (&$vars) {
 
       foreach ($all_parents_term as $key => $value) {
         $first_child_term = $burger_service->getTaxonomyTermChildByParentName($value['name']);
+        
+        
+        //Ceci permet de ne pas afficher le terme coché pour "site public" de ne pas l'affiché sur le menu extranet
+        if ($this->isTermForSitePub($value['id'])) {
+          continue;
+        }
+        //end
+
 
         //Si le role d'user courant est social et que le term est de type social aussi
-        if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
+        if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id']) && ($this->isTermForSitePub($value['id']))) {
           continue;
         }
         $all_parents_term[$key] = [$value['name'] => $first_child_term];
@@ -719,7 +810,7 @@ public function disableDuplicateHome (&$vars) {
       } 
       //$all_parents_term;
 
-      $html = '<ul class="dropdown menu">';
+      $html = '<ul class="dropdown menu site-extranet-cv">';
 
 
       //Ne pas afficher le menu commission parmis les termes, on l'affiche differament
