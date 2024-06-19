@@ -1,6 +1,6 @@
 <div class="content-menu-burger">
 
-    {% if content.isSiteMetier %}
+    {% if content.isSiteMetier or content.isSitePublic %}
         <div id="block-b-zf-branding " class="block-system block-b-zf-branding">
             <a href="/" title="Accueil" rel="home" class="site-logo">
                 <img class="metier-logo-cv" src="/files/Groupe_2.png" alt="Accueil">
@@ -8,10 +8,12 @@
         </div>
     {% endif %}
     
-    {% if not content.isSiteMetier %}
-        <span class="menu-open">
-            <i class="fa fa-bars"></i>
-        </span>
+    {% if not content.isSiteMetier  %}
+        {% if  not content.isSitePublic  %}
+            <span class="menu-open">
+                <i class="fa fa-bars"></i>
+            </span>
+        {% endif %}
     {% endif %}
 
     {# {% if not content.isSiteMetier %} #}
