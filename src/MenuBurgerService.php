@@ -680,11 +680,18 @@ public function disableDuplicateHome (&$vars) {
       if (strpos($item, 'no-link') ===  false) {
         if (array_keys($menu)[0] != 'id') {
           //ne pas afficher "export"
-          // $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
+          $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
         }
       }else {
         if (array_keys($menu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
           $toggleClasses = in_array('yes', $this->toggleClassMenu($menu[array_keys($menu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
+          
+          //Ajout de la filiere juste apres
+          if (array_keys($menu)[0] == 'Communications / Temps forts')  {
+            $html .= $this->createMenuFiliere();
+          }
+
+
           $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
           <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
           foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
@@ -716,7 +723,7 @@ public function disableDuplicateHome (&$vars) {
     
     $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="https://metiers-viande.makoa4.makoa.net/accueil-metier">Site métier</a></li>';
     
-    $html .= $this->createMenuFiliere();
+    
   $allGroupAfficherSurExtranet = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Commissions<span class="switch-collapsible"></span></a>
   <ul class="submenu is-dropdown-submenu first-sub vertical" style="display: block;">';
   
@@ -744,17 +751,42 @@ public function getFilieres () {
   //ajouter de l'icone avec les filieres    
 
   foreach ($optionValues as $optionValue) {
-      $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description']]; 
-  }
+    switch($optionValue['name']) {
+        case 'Veau':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6378]; 
+            break;
+        case 'Porc':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6377]; 
+            break;
+        case 'Ovin':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6376]; 
+            break;
+        case 'Bovin':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6375]; 
+            break;
+        case 'Caprine':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6380]; 
+            break;
+        case 'Equine':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6379]; 
+            break;
+        case 'Produits_tripiers':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6381]; 
+            break;
+
+    }
+
+}
   return $filiere;
 }
 
 public function createMenuFiliere () {
   $html = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Filières<span class="switch-collapsible"></span></a>
   <ul class="submenu is-dropdown-submenu first-sub vertical  menu-to-be-hide  " style="display: none;">';
-  $allFilieres = array_keys($this->getFilieres());
+  $allFilieres = $this->getFilieres();
   foreach ($allFilieres as $filiere) {//TODO MENU LIEN VERS CHAQUE FILIERE
-    $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="#">' . $filiere . '</a></li>';
+    // dump($filiere);
+    $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="/taxonomy/term/' . $filiere['id_term_linked'] . '">' . $filiere['label'] . '</a></li>';
   }
   $html .= '</ul></li>';
   return $html;
