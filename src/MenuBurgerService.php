@@ -17,6 +17,7 @@ use Drupal\taxonomy\Entity\Vocabulary;
 class MenuBurgerService {
 
   const DOMAIN_PUBLIC = "cultureviande_dev_makoa_net";
+  const SITE_METIER = "https://metiers-viande.com/accueil-metier";
 
     public function getMeetings() {
         $query = "SELECT
@@ -659,7 +660,12 @@ public function disableDuplicateHome (&$vars) {
             if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
               continue;
             }
-            $formatted_arr[$key] = $value['name'];
+
+            //Seul les termes qui sont cochés "CV PUBLIC" qu'on autorise ici 
+            $termObj = $this->loadTermById($value['id']);
+            if (in_array(self::DOMAIN_PUBLIC, array_column($termObj->get('field_domain_acces')->getValue(), 'target_id'))) {
+              $formatted_arr[$key] = $value['name'];
+            }
           }
 
           $all_parents_term[$first_key_level][$second_key_level] = $formatted_arr;
@@ -677,17 +683,21 @@ public function disableDuplicateHome (&$vars) {
     // unset($all_parents_term['no-linkCommissions']);
 
     foreach($all_parents_term as $item => $menu) {
-      if (strpos($item, 'no-link') ===  false) {
+      if (strpos($item, 'no-link') ===  false) {// qui n'ont pas de sous-menus
         if (array_keys($menu)[0] != 'id') {
           //ne pas afficher "export"
+          if (array_keys($menu)[0] == 'Contacts') {
+            $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . self::SITE_METIER . '">Site métiers</a></li>';
+          }
           $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
         }
-      }else {
+      }else { //qui ont des sous-menus
         if (array_keys($menu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
           $toggleClasses = in_array('yes', $this->toggleClassMenu($menu[array_keys($menu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
           
           //Ajout de la filiere juste apres
-          if (array_keys($menu)[0] == 'Communications / Temps forts')  {
+          // dump(array_keys($menu)[0]);
+          if (array_keys($menu)[0] == 'Expertises')  {
             $html .= $this->createMenuFiliere();
           }
 
@@ -721,8 +731,7 @@ public function disableDuplicateHome (&$vars) {
       } 
     }
     
-    $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="https://metiers-viande.makoa4.makoa.net/accueil-metier">Site métier</a></li>';
-    
+       
     
   $allGroupAfficherSurExtranet = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Commissions<span class="switch-collapsible"></span></a>
   <ul class="submenu is-dropdown-submenu first-sub vertical" style="display: block;">';
@@ -739,6 +748,10 @@ public function disableDuplicateHome (&$vars) {
   return $html;
 
   
+}
+
+private function loadTermById ($id) {
+  return Term::load($id);
 }
 
 public function getFilieres () {
