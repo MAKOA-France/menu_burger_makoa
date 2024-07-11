@@ -644,7 +644,7 @@ public function disableDuplicateHome (&$vars) {
       if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
         continue;
       }
-      $all_parents_term[$key] = [$value['name'] => $first_child_term];
+      $all_parents_term[$key] = [$value['name'] => $first_child_term, 'id' => $value['id']];
     }
 
     foreach ($all_parents_term as $first_key_level => $first_level_value) {
@@ -669,13 +669,14 @@ public function disableDuplicateHome (&$vars) {
           }
 
           $all_parents_term[$first_key_level][$second_key_level] = $formatted_arr;
-          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr];
+          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr, 'id' => $second_level_value['id']];
         }
       }
     } 
     //$all_parents_term;
+    
 
-    $html = '<ul class="dropdown menu cv-pub-site"><li class="menu-item menu-item--collapsed premier-niv"><a href="/">Accueil</a></li>';
+    $html = '<ul class="dropdown menu cv-pub-site">';
 
 
     //Ne pas afficher le menu commission parmis les termes, on l'affiche differament
@@ -707,8 +708,11 @@ public function disableDuplicateHome (&$vars) {
           foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
             
             if (array_keys($submenu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
+              if (strpos($key, 'no-link') ===  false || (empty(reset($submenu)))) { //Si le submenu n'a pas d'enfant
 
-              if (strpos($key, 'no-link') ===  false) {
+                if (empty(reset($submenu))) {
+                  $key = '/taxonomy/term/' . $submenu['id']; 
+                }
                 $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
               }else {
                 $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
