@@ -18,6 +18,7 @@ class MenuBurgerService {
 
   const DOMAIN_PUBLIC = "cultureviande_dev_makoa_net";
   const SITE_METIER = "https://metiers-viande.com/accueil-metier";
+  const ID_SOCIAL_RH = 5012;
 
     public function getMeetings() {
         $query = "SELECT
@@ -650,10 +651,15 @@ public function disableDuplicateHome (&$vars) {
     foreach ($all_parents_term as $first_key_level => $first_level_value) {
       foreach (reset($first_level_value) as $second_key_level => $second_level_value)  {
         $second_child_term = $burger_service->getTaxonomyTermChildByParentName($second_level_value['name']);
-        
         if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($second_level_value['id'])) {
           continue;
         }
+
+        if ($second_level_value['id'] == '6391') {
+          continue;
+        }
+
+
         if (isset($first_level_value[array_keys( $first_level_value)[0]][$second_key_level])) {
           $formatted_arr = [];
           foreach($second_child_term as $key => $value) {
@@ -687,12 +693,14 @@ public function disableDuplicateHome (&$vars) {
       if (strpos($item, 'no-link') ===  false) {// qui n'ont pas de sous-menus
         if (array_keys($menu)[0] != 'id') {
           //ne pas afficher "export"
-          if (array_keys($menu)[0] == 'Contacts') {
-            $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . self::SITE_METIER . '">Site métiers</a></li>';
-          }
+        
           $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
         }
       }else { //qui ont des sous-menus
+
+        if (array_keys($menu)[0] == 'Contacts') {
+          $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . self::SITE_METIER . '">Site métiers</a></li>';
+        }
         if (array_keys($menu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
           $toggleClasses = in_array('yes', $this->toggleClassMenu($menu[array_keys($menu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
           
@@ -702,6 +710,10 @@ public function disableDuplicateHome (&$vars) {
             $html .= $this->createMenuFiliere();
           }
 
+          
+          if ($menu['id'] == self::ID_SOCIAL_RH) {//On n'affiche pas "social/Rh" pour le site pub
+            continue;
+          }
 
           $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
           <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
