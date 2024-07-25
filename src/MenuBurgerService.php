@@ -16,7 +16,8 @@ use Drupal\taxonomy\Entity\Vocabulary;
  */
 class MenuBurgerService {
 
-  const DOMAIN_PUBLIC = "cultureviande_dev_makoa_net";
+  const DOMAIN_PUBLIC_DEV = "cultureviande_dev_makoa_net";
+  const DOMAIN_PUBLIC = "cultureviande.makoa4.makoa.net";
   const SITE_METIER = "https://metiers-viande.com/accueil-metier";
   const ID_SOCIAL_RH = 5012;
 
@@ -613,7 +614,7 @@ public function disableDuplicateHome (&$vars) {
         $isSitePublic = $term->get('field_domain_acces')->getValue();
         if ($isSitePublic) {
           $isSitePublic = array_column($isSitePublic, 'target_id');
-          if (in_array(self::DOMAIN_PUBLIC, $isSitePublic)) {//todo mise en prod
+          if (in_array(self::DOMAIN_PUBLIC, $isSitePublic) || in_array(self::DOMAIN_PUBLIC_DEV, $isSitePublic)) {//todo mise en prod
             $checked_site_public_term_parent[] = $term->id();
           }
         }
@@ -669,7 +670,9 @@ public function disableDuplicateHome (&$vars) {
 
             //Seul les termes qui sont cochés "CV PUBLIC" qu'on autorise ici 
             $termObj = $this->loadTermById($value['id']);
-            if (in_array(self::DOMAIN_PUBLIC, array_column($termObj->get('field_domain_acces')->getValue(), 'target_id'))) {
+            if (in_array(self::DOMAIN_PUBLIC, array_column($termObj->get('field_domain_acces')->getValue(), 'target_id'))
+            || in_array(self::DOMAIN_PUBLIC_DEV, array_column($termObj->get('field_domain_acces')->getValue(), 'target_id'))
+            ) {
               $formatted_arr[$key] = $value['name'];
             }
           }
@@ -828,7 +831,7 @@ public function isTermForSitePub ($termId) {
   $term = Term::load($termId);
   $isSitePub = false;
   $domainType = $this->getNodeFieldValue($term , 'field_domain_acces');
-  if ($domainType == self::DOMAIN_PUBLIC) {
+  if ($domainType == self::DOMAIN_PUBLIC || $domainType == self::DOMAIN_PUBLIC_DEV) {
     $isSitePub = true;
   }
 
