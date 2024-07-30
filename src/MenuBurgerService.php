@@ -676,9 +676,18 @@ public function disableDuplicateHome (&$vars) {
               $formatted_arr[$key] = $value['name'];
             }
           }
-
+          
           $all_parents_term[$first_key_level][$second_key_level] = $formatted_arr;
-          $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr, 'id' => $second_level_value['id']];
+          $termObj2eNiv = $this->loadTermById($second_level_value['id']);
+          if ($termObj2eNiv) {
+
+            if (in_array(self::DOMAIN_PUBLIC, array_column($termObj2eNiv->get('field_domain_acces')->getValue(), 'target_id'))
+            || in_array(self::DOMAIN_PUBLIC_DEV, array_column($termObj2eNiv->get('field_domain_acces')->getValue(), 'target_id'))
+            ) {
+              
+              $all_parents_term[$first_key_level][array_keys( $first_level_value)[0]][$second_key_level] = [$second_level_value['name'] => $formatted_arr, 'id' => $second_level_value['id']];
+            }
+          }
         }
       }
     } 
