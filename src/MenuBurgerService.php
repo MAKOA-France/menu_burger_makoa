@@ -646,7 +646,14 @@ public function disableDuplicateHome (&$vars) {
       if ((!$this->hasRoleSocial() && !$this->hasRoleSUorPermanent()) && $this->isTermSocial($value['id'])) {
         continue;
       }
-      $all_parents_term[$key] = [$value['name'] => $first_child_term, 'id' => $value['id']];
+      $termObjParent = $this->loadTermById($value['id']);
+      //Ne pas afficher aussi les termes qui ne sont pas coché cultureviande_site_pub
+      if (in_array(self::DOMAIN_PUBLIC, array_column($termObjParent->get('field_domain_acces')->getValue(), 'target_id'))
+      || in_array(self::DOMAIN_PUBLIC_DEV, array_column($termObjParent->get('field_domain_acces')->getValue(), 'target_id'))
+      ) {
+        $all_parents_term[$key] = [$value['name'] => $first_child_term, 'id' => $value['id']];
+      }
+
     }
 
     foreach ($all_parents_term as $first_key_level => $first_level_value) {
