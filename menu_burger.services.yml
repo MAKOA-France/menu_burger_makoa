@@ -1,4 +1,6 @@
 services:
   menu_burger.view_services:
     class: Drupal\menu_burger\MenuBurgerService
+    arguments: ['@entity_type.manager', '@path_alias.manager']
+
 

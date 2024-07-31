@@ -10,6 +10,11 @@ use Drupal\Core\Session\AccountInterface;
   
 use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\Entity\Vocabulary;
+
+
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\path_alias\AliasManagerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Class PubliciteService
  * @package Drupal\menu_burger\Services
@@ -20,6 +25,22 @@ class MenuBurgerService {
   const DOMAIN_PUBLIC = "cultureviande_makoa4_makoa_net";
   const SITE_METIER = "https://metiers-viande.com/accueil-metier";
   const ID_SOCIAL_RH = 5012;
+
+
+  protected $entityTypeManager;
+  protected $aliasManager;
+
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, AliasManagerInterface $alias_manager) {
+    $this->entityTypeManager = $entity_type_manager;
+    $this->aliasManager = $alias_manager;
+  }
+
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity_type.manager'),
+      $container->get('path_alias.manager')
+    );
+  }
 
     public function getMeetings() {
         $query = "SELECT
@@ -708,13 +729,26 @@ public function disableDuplicateHome (&$vars) {
     // unset($all_parents_term['/accueil/commissions']);
     // unset($all_parents_term['no-linkCommissions']);
 
+    $sub_menu_expertise = [];
     foreach($all_parents_term as $item => $menu) {
       if (strpos($item, 'no-link') ===  false) {// qui n'ont pas de sous-menus
+        
+        
+        //Ne pas afficher pour le menu du 1er niveau bientraitance anim, securité sanitaire, export, environnement et co- qui ont comme id []
+        if (in_array($menu['id'], $this->idTermOfBIentraitEnvironnementSecuritSanitaireExport())) {
+          // $sub_menu_expertise['id'] = ;
+          $sub_menu_expertise[$menu['id']] = array_keys($menu)[0];
+          continue;
+        }
+
+
         if (array_keys($menu)[0] != 'id') {
           //ne pas afficher "export"
         
           $html .= '<li class="menu-item menu-item--collapsed premier-niv"><a href="' . $item . '">' .  array_keys($menu)[0] . '</a></li>';
         }
+
+
       }else { //qui ont des sous-menus
 
         if (array_keys($menu)[0] == 'Contacts') {
@@ -729,13 +763,24 @@ public function disableDuplicateHome (&$vars) {
             $html .= $this->createMenuFiliere();
           }
 
+
+
           
           if ($menu['id'] == self::ID_SOCIAL_RH) {//On n'affiche pas "social/Rh" pour le site pub
             continue;
           }
 
-          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
+
+          //Ne pas afficher pour le menu du 1er niveau bientraitance anim, securité sanitaire, export, environnement et co- qui ont comme id []
+          if (in_array($menu['id'], $this->idTermOfBIentraitEnvironnementSecuritSanitaireExport())) {
+            $sub_menu_expertise[$menu['id']] = array_keys($menu)[0];
+            continue;
+          }
+
+
+          $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv" data-menu-id="'. $menu['id'] . '"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
           <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
+          
           foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
             
             if (array_keys($submenu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
@@ -744,6 +789,15 @@ public function disableDuplicateHome (&$vars) {
                 if (empty(reset($submenu))) {
                   $key = '/taxonomy/term/' . $submenu['id']; 
                 }
+
+                //Affichage des Bientraitance, securité sanitaire, export , environnement sous la rubrique 'Expertise'
+                if (array_keys($menu)[0] == 'Expertises') {
+                  foreach($sub_menu_expertise as $sub_menu_expertise_id => $sub_menu_expertise_label) {
+                    $term_path_alias = $this->getTermPathAlias($sub_menu_expertise_id);
+                    $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $term_path_alias . '">' . $sub_menu_expertise_label . '</a></li>';
+                  }
+                }
+
                 $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
               }else {
                 $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
@@ -783,6 +837,21 @@ public function disableDuplicateHome (&$vars) {
   return $html;
 
   
+}
+
+public function getTermPathAlias($term_id) {
+  $term = $this->entityTypeManager->getStorage('taxonomy_term')->load($term_id);
+  if ($term) {
+    $path = '/taxonomy/term/' . $term_id;
+    $alias = $this->aliasManager->getAliasByPath($path);
+    return $alias;
+  }
+  return NULL;
+}
+
+
+private function idTermOfBIentraitEnvironnementSecuritSanitaireExport () {
+  return [6268, 6262, 6371, 6372, /* PROD*/6269];
 }
 
 private function loadTermById ($id) {
