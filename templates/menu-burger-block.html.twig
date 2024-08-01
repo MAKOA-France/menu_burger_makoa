@@ -2,9 +2,15 @@
 
     {% if content.isSiteMetier or content.isSitePublic %}
         <div id="block-b-zf-branding " class="block-system block-b-zf-branding">
+         {% if content.isSitePublic %}
+          <a href="/accueil-public" title="Accueil" rel="home" class="site-logo">
+                <img class="metier-logo-cv" src="/files/Groupe_2.png" alt="Accueil">
+            </a>
+         {% else %}
             <a href="/" title="Accueil" rel="home" class="site-logo">
                 <img class="metier-logo-cv" src="/files/Groupe_2.png" alt="Accueil">
             </a>
+         {% endif %}
         </div>
     {% endif %}
     
