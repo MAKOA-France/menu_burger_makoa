@@ -644,6 +644,17 @@ public function disableDuplicateHome (&$vars) {
     return $checked_site_public_term_parent;
   }
 
+  public function generateAliasTerm ($id, $isTerm = true) {
+    $path_alias_manager = \Drupal::service('path_alias.manager');
+    $current_path = \Drupal::service('path.current')->getPath();
+    $curr =  "/taxonomy/term/" . $id;
+    if (!$isTerm) {
+        $curr =  "/node/$id";
+    }
+    $alias = $path_alias_manager->getAliasByPath($curr);
+    return $alias;
+}
+
   public function getAllTaxoWithHierarchyPublicSite () {
     $burger_service = \Drupal::service('menu_burger.view_services');
     $all_parents_term = $this->getTaxonomyTermChildByParentName(null);
@@ -777,28 +788,36 @@ public function disableDuplicateHome (&$vars) {
             continue;
           }
 
-
           $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv" data-menu-id="'. $menu['id'] . '"><a class="disabled-button-link"  href="javascript:void(0);">' . array_keys($menu)[0] . '<span class="switch-collapsible"></span></a>
           <ul class="submenu is-dropdown-submenu first-sub vertical ' . $toggleClasses . ' ">';
-          
+          $i = 0;
           foreach ($menu[array_keys($menu)[0]] as $key => $submenu)  {
             
             if (array_keys($submenu)[0] != 'id') {//ça veut dire que le terme est de type social donc on n'affiche pas pour les autres roles
               if (strpos($key, 'no-link') ===  false || (empty(reset($submenu)))) { //Si le submenu n'a pas d'enfant
 
                 if (empty(reset($submenu))) {
-                  $key = '/taxonomy/term/' . $submenu['id']; 
+                  $alias = $this->generateAliasTerm($submenu['id']);
+                  $key = $alias; 
                 }
 
-                //Affichage des Bientraitance, securité sanitaire, export , environnement sous la rubrique 'Expertise'
-                if (array_keys($menu)[0] == 'Expertises') {
-                  foreach($sub_menu_expertise as $sub_menu_expertise_id => $sub_menu_expertise_label) {
-                    $term_path_alias = $this->getTermPathAlias($sub_menu_expertise_id);
-                    $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $term_path_alias . '">' . $sub_menu_expertise_label . '</a></li>';
-                  }
-                }
 
                 $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
+                
+                
+                //Affichage des Bientraitance, securité sanitaire, export , environnement sous la rubrique 'Expertise'  (on l'ajoute manuellement car elle se trouve au 1er niveau des rubriques
+                // et ce qu'on veut c'est qu'on les mettent comme sous rubrique de "expertises")
+                if (array_keys($menu)[0] == 'Expertises') {
+                  
+                  foreach($sub_menu_expertise as $sub_menu_expertise_id => $sub_menu_expertise_label) {
+                    $term_path_alias = $this->getTermPathAlias($sub_menu_expertise_id);
+                    if ($i < count($sub_menu_expertise)) {
+                      $html .= '<li class="menu-item menu-item--collapsed second-niv"><a data-ip="' . $client_ip .  '" href="' . $term_path_alias . '">' . $sub_menu_expertise_label . '</a></li>';
+                      $i = $i + 1;
+                    }
+                  }
+                }
+                
               }else {
                 $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
                 $html .= '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right second-niv"><a class="disabled-button-link"  href="javascript:void(0);">' .array_keys($submenu)[0]. '<span class="switch-collapsible"></span></a>
@@ -869,41 +888,66 @@ public function getFilieres () {
 
   foreach ($optionValues as $optionValue) {
     switch($optionValue['name']) {
-        case 'Veau':
-            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6378]; 
-            break;
         case 'Porc':
-            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6377]; 
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6380]; //
+            break;
+        case 'Veau':
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6375]; //
             break;
         case 'Ovin':
-            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6376]; 
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6379]; //
             break;
         case 'Bovin':
-            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6375]; 
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6376]; //
             break;
         case 'Caprine':
-            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6380]; 
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6377]; //
             break;
         case 'Equine':
-            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6379]; 
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6378]; //
             break;
         case 'Produits_tripiers':
-            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6381]; 
+            $filiere[$optionValue['name']] = ['label' => $optionValue['label'], 'icon' => $optionValue['description'], 'id_term_linked' => 6381]; //
             break;
 
     }
 
 }
-  return $filiere;
+  // Les clés dans l'ordre souhaité
+  $desiredOrder = ["Porc", "Bovin", "Ovin"];
+
+  // Le nouveau tableau pour contenir les éléments réorganisés
+  $reorderedAnimals = [];
+
+  // Ajouter les éléments dans l'ordre souhaité
+  foreach ($desiredOrder as $key) {
+      if (isset($filiere[$key])) {
+          $reorderedAnimals[$key] = $filiere[$key];
+          unset($filiere[$key]); // Supprimer l'élément déjà ajouté
+      }
+  }
+
+  // Ajouter les éléments restants dans leur ordre d'origine
+  foreach ($filiere as $key => $value) {
+      $reorderedAnimals[$key] = $value;
+  }
+
+  return $reorderedAnimals;
 }
 
 public function createMenuFiliere () {
   $html = '<li class="menu-item menu-item--expanded menu-item--active-trail is-dropdown-submenu-parent opens-right premier-niv"><a class="disabled-button-link" href="void(0);">Filières<span class="switch-collapsible"></span></a>
   <ul class="submenu is-dropdown-submenu first-sub vertical  menu-to-be-hide  " style="display: none;">';
   $allFilieres = $this->getFilieres();
+
+  $path_alias_manager = \Drupal::service('path_alias.manager');
+  $current_path = \Drupal::service('path.current')->getPath();
+
   foreach ($allFilieres as $filiere) {//TODO MENU LIEN VERS CHAQUE FILIERE
     // dump($filiere);
-    $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="/taxonomy/term/' . $filiere['id_term_linked'] . '">' . $filiere['label'] . '</a></li>';
+    $curr =  "/taxonomy/term/" . $filiere['id_term_linked'];
+    $alias = $path_alias_manager->getAliasByPath($curr);
+    $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $alias . '">' . $filiere['label'] . '</a></li>';
   }
   $html .= '</ul></li>';
   return $html;
