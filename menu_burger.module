@@ -35,7 +35,10 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
 
   // Disable breadcrumb for logged out users.
   if (!$isUserLoggedIn) {
-    $variables['breadcrumb'] = [];
+    $base_url = \Drupal::request()->getSchemeAndHttpHost();
+    if (strpos($base_url, 'cultureviande.') === false) {
+      $variables['breadcrumb'] = [];
+    }
   }
 
   if($is_taxo_page) {
