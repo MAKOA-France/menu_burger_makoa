@@ -51,7 +51,8 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
     // Get the key of the last element
     $lastKey = key($variables['breadcrumb']);
     foreach ($variables['breadcrumb'] as $key => $breadcrumb) {
-      // dump([$count, $key]);
+
+
       if ($key != $lastKey) {// pour le fil d'ariane, juste desactiver le lien pour chaque element sauf le dernier; exemple Accueil > Cotations > Cotation Hebdo....
         //  je desactive le lien sur accueil et Cotations 
         $variables['breadcrumb'][$key]['url'] = NULL;
@@ -66,8 +67,17 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
       }
       
       foreach ($all_child as $key_child => $value_child) {
+           // Check if the client's IP address matches your IP address
+        $base_url = \Drupal::request()->getSchemeAndHttpHost();
+        if (strpos($base_url, 'cultureviande.') !== false) {
+          $id_rub = $value_child['id'];
+          if (!$burger_service->getDomainByid($id_rub)) {
+            continue;
+          }
+        }
         $new_all_child[$key_child] = $value_child['name'];
       }
+ 
       $variables['breadcrumb'][$key]['submenu'] = $new_all_child;
     }
 

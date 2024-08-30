@@ -128,13 +128,12 @@ class BurgerBlock  extends BlockBase  {
     
       $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchy()];
     
-      /** TODO MEP POUR LE SITE PUBLIC  */
+
       $isSitePublic = (strpos($base_url, 'cultureviande.dev.makoa.net') !== false)  || (strpos($base_url, 'cultureviande.makoa4.makoa.net') !== false) ? true : false;
       if (strpos($base_url, 'cultureviande.dev.makoa.net') !== false OR strpos($base_url, 'cultureviande.makoa4.makoa.net') !== false) {
         $markup = ['#markup' => $burger_service->getAllTaxoWithHierarchyPublicSite()];
       }
       
-      /** END SITE PUBLIC */
 
       // $markup = ['#markup' => $html];
       if (strpos($base_url, 'metiers-viande.') !== false) {
@@ -299,7 +298,7 @@ class BurgerBlock  extends BlockBase  {
 
               $term_id = $second_level->link->getPluginDefinition()['route_parameters']['taxonomy_term'];
               $is_social = $this->checkIfThereIsDocumentLinkedWithThisTerm($term_id, $second_level->link->getTitle());
-              if (!$is_social) {//TODO CONDITION ROLE SOCIAL AUSSI
+              if (!$is_social) {
                   $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()][] = $second_level->link->getTitle();
                   $all_menus[$first_level->link->getTitle()][$second_level->link->getTitle()]['link_menus'][] = $this->getUrlC($second_level->link->getPluginId());
                   if ($second_level->subtree) {

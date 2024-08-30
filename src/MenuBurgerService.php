@@ -551,7 +551,7 @@ public function disableDuplicateHome (&$vars) {
       $children = $term_storage->loadChildren($first_parent_id, $vocab_name);
       
       
-      //TODO creer une fonction pour le menu SITE METIER et faire le refactoring
+      //Men usit emetier creer une fonction pour le menu SITE METIER et faire le refactoring
 
       $html = '<ul class="dropdown menu menu-site-metier">';
 
@@ -635,7 +635,7 @@ public function disableDuplicateHome (&$vars) {
         $isSitePublic = $term->get('field_domain_acces')->getValue();
         if ($isSitePublic) {
           $isSitePublic = array_column($isSitePublic, 'target_id');
-          if (in_array(self::DOMAIN_PUBLIC, $isSitePublic) || in_array(self::DOMAIN_PUBLIC_DEV, $isSitePublic)) {//todo mise en prod
+          if (in_array(self::DOMAIN_PUBLIC, $isSitePublic) || in_array(self::DOMAIN_PUBLIC_DEV, $isSitePublic)) { 
             $checked_site_public_term_parent[] = $term->id();
           }
         }
@@ -943,7 +943,7 @@ public function createMenuFiliere () {
   $path_alias_manager = \Drupal::service('path_alias.manager');
   $current_path = \Drupal::service('path.current')->getPath();
 
-  foreach ($allFilieres as $filiere) {//TODO MENU LIEN VERS CHAQUE FILIERE
+  foreach ($allFilieres as $filiere) {
     // dump($filiere);
     $curr =  "/taxonomy/term/" . $filiere['id_term_linked'];
     $alias = $path_alias_manager->getAliasByPath($curr);
@@ -1102,6 +1102,22 @@ public function isTermForSitePub ($termId) {
       ->execute()->getIterator();
     $groups = iterator_to_array($groups);   
     return $groups;
+  }
+
+  public function getDomainByid ($id) {
+    $state = false;
+    $term = Term::load($id);
+    if (!$term) {
+      return $state;
+    }
+    $domains =  $term->get('field_domain_acces')->getValue();
+    if (!empty($domains)) {
+      $domains = array_column($domains, 'target_id');
+      if (in_array('cultureviande_makoa4_makoa_net', $domains)) {
+        $state = true;
+      }
+    }
+    return $state; 
   }
 
   private function isTermSocial ($termId) {
