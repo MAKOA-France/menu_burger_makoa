@@ -25,6 +25,7 @@ class MenuBurgerService {
   const DOMAIN_PUBLIC = "cultureviande_makoa4_makoa_net";
   const SITE_METIER = "https://metiers-viande.com/accueil-metier";
   const ID_SOCIAL_RH = 5012;
+  const ESP_AD = 6394;
 
 
   protected $entityTypeManager;
@@ -801,7 +802,10 @@ public function disableDuplicateHome (&$vars) {
                   $key = $alias; 
                 }
 
-
+                if (isset($submenu['id']) && $submenu['id'] == self::ESP_AD) {
+                  $html .= '<li class="menu-item menu-item--collapsed second-niv"><a target="_blank" href="https://phenix.cultureviande.fr/">' . array_keys($submenu)[0] . '</a></li>';
+                  continue;
+                }
                 $html .= '<li class="menu-item menu-item--collapsed second-niv"><a href="' . $key . '">' . array_keys($submenu)[0] . '</a></li>';
                 
                 
@@ -817,6 +821,8 @@ public function disableDuplicateHome (&$vars) {
                     }
                   }
                 }
+
+          
                 
               }else {
                 $toggleClasses = in_array('yes', $this->toggleClassMenu($submenu[array_keys($submenu)[0]])) ? ' menu-to-be-showed ' : ' menu-to-be-hide ';
