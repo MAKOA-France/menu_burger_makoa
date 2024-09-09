@@ -1167,4 +1167,31 @@ public function isTermForSitePub ($termId) {
     // Get an array of role IDs for the current user.
     return $current_user->getRoles();
   }
+
+  public function alterChild(&$child) {
+    $child['/filieres/filiere-porcine'] = [
+      "id" => "6380",
+      "name" => "Porc ",
+      "weight" => "0"];
+    $child['/filieres/filiere-bovine'] = [
+          "id" => "6376",
+          "name" => "Bovin ",
+          "weight" => "0"];
+    $child['/filieres/filiere-ovine'] = [
+          "id" => "6379",
+          "name" => "Ovin ",
+          "weight" => "0"];
+    $child['/filieres/filiere-veau'] = [
+          "id" => "6375",
+          "name" => "Veau ",
+          "weight" => "0"];
+    $child['/filieres/filiere-caprine'] = [
+          "id" => "6377",
+          "name" => "Caprin ",
+          "weight" => "0"];
+    $child['/filieres/filiere-produits-tripiers'] = [
+          "id" => "6381",
+          "name" => "Produits tripiers ",
+          "weight" => "0"];
+  }
 }

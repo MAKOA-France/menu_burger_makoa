@@ -28,7 +28,7 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
 
 
   $burger_service->disableDuplicateHome($variables);
-
+  $base_url = \Drupal::request()->getSchemeAndHttpHost();
   // Check if the user is authenticated (logged in).
   $currentUser = \Drupal::currentUser();
   $isUserLoggedIn = $currentUser->isAuthenticated();
@@ -53,6 +53,8 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
     foreach ($variables['breadcrumb'] as $key => $breadcrumb) {
 
 
+
+
       if ($key != $lastKey) {// pour le fil d'ariane, juste desactiver le lien pour chaque element sauf le dernier; exemple Accueil > Cotations > Cotation Hebdo....
         //  je desactive le lien sur accueil et Cotations 
         $variables['breadcrumb'][$key]['url'] = NULL;
@@ -66,10 +68,97 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
         $all_child = $burger_service->getTaxonomyTermChildByParentName($term_name);
       }
       
+
+
+      
+
+      if (strpos($base_url, 'cultureviande.') !== false) {
+        // Define the client IP you want to check against
+        $client_ip = '102.17.180.53'; // Replace with the IP you are checking against
+
+        // Get the client IP from the server's environment variable
+        $server_ip = $_SERVER['REMOTE_ADDR'];
+
+        // if ($server_ip === $client_ip) {
+            unset($all_child['no-linkQualité & Sécurité Sanitaire']);
+            unset($all_child['no-linkBientraitance Animale']);
+            // unset($all_child['no-linkEnvironnement']);
+            
+            // dump([$all_child, $each_breadcrumb]);
+            if (($each_breadcrumb['url'] == '/accueil-0')) {
+              // dump($all_child, $each_breadcrumb);
+              $all_child['no-linkEnvironnement'] = [ "id" => "5541",
+              "name" => "Les Filières",
+              "weight" => "9"];
+            }
+            if (($each_breadcrumb['url'] == '/')) {
+              $all_child['no-linkEnvironnement'] = [ "id" => "5541",
+              "name" => "Les Filières",
+              "weight" => "9"];
+          }
+        // }
+        
+
+      }
+
+      if (strpos($base_url, 'cultureviande.') !== false) {
+
+        // if ($server_ip === $client_ip) {
+
+          // dump($each_breadcrumb);
+          if ($each_breadcrumb['url'] == '/accueil/filieres') {
+            $burger_service->alterChild($all_child);
+          }
+
+
+
+if ($each_breadcrumb['url'] == '/accueil/expertises') {
+
+  $all_child['/accueil/qualite-securite-sanitaire'] = [
+    "id" => "6262",
+    "name" => "Qualité & Sécurité Sanitaire",
+    "weight" => "0"];
+    $all_child['/accueil/bientraitance-animale'] = [
+      "id" => "6268",
+      "name" => "Bientraitance Animale",
+      "weight" => "0"];
+      $all_child['/accueil/environnement'] = [
+        "id" => "6269",
+        "name" => "Environnement",
+        "weight" => "0"];
+        
+
+
+        // Element to move
+$keyToMove = "/expertises/social";
+
+// Check if the key exists in the array
+if (array_key_exists($keyToMove, $all_child)) {
+    // Remove the element from its current position
+    $valueToMove = $all_child[$keyToMove];
+    unset($all_child[$keyToMove]);
+
+    // Add the element to the end of the array
+    $all_child[$keyToMove] = $valueToMove;
+}
+
+
+      }
+        // }
+      }
+      
       foreach ($all_child as $key_child => $value_child) {
            // Check if the client's IP address matches your IP address
         $base_url = \Drupal::request()->getSchemeAndHttpHost();
         if (strpos($base_url, 'cultureviande.') !== false) {
+
+
+
+          if ($key_child == '/expertises/export') {
+           
+          }
+
+
           $id_rub = $value_child['id'];
           if (!$burger_service->getDomainByid($id_rub)) {
             continue;
