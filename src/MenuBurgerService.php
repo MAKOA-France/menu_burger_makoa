@@ -1189,6 +1189,10 @@ public function isTermForSitePub ($termId) {
           "id" => "6377",
           "name" => "Caprin ",
           "weight" => "0"];
+    $child['/filieres/filiere-equine'] = [
+          "id" => "6378",
+          "name" => "Equin ",
+          "weight" => "0"];
     $child['/filieres/filiere-produits-tripiers'] = [
           "id" => "6381",
           "name" => "Produits tripiers ",
