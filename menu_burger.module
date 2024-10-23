@@ -74,10 +74,7 @@ function  menu_burger_preprocess_breadcrumb(&$variables) {
 
       if (strpos($base_url, 'cultureviande.') !== false) {
         // Define the client IP you want to check against
-        $client_ip = '102.17.180.53'; // Replace with the IP you are checking against
 
-        // Get the client IP from the server's environment variable
-        $server_ip = $_SERVER['REMOTE_ADDR'];
 
         // if ($server_ip === $client_ip) {
             unset($all_child['no-linkQualité & Sécurité Sanitaire']);
